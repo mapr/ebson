@@ -32,9 +32,7 @@ import com.mongodb.WriteConcernResult
 import com.mongodb.async.FutureResultCallback
 import com.mongodb.async.SingleResultCallback
 import com.mongodb.bulk.InsertRequest
-import com.mongodb.connection.AsyncConnection
 import com.mongodb.connection.ClusterId
-import com.mongodb.connection.Connection
 import com.mongodb.connection.ServerId
 import com.mongodb.event.CommandListener
 import com.mongodb.event.ServerListener
@@ -65,7 +63,7 @@ class DefaultServerSpecification extends Specification {
         def serverMonitorFactory = Stub(ServerMonitorFactory)
         def serverMonitor = Stub(ServerMonitor)
         def internalConnection = Stub(InternalConnection)
-        def connection = Stub(Connection)
+        def connection = Stub(SyncAsyncConnection)
         def clusterTime = new ClusterClock()
 
         serverMonitorFactory.create(_, _) >> { serverMonitor }
@@ -91,7 +89,7 @@ class DefaultServerSpecification extends Specification {
         def serverMonitorFactory = Stub(ServerMonitorFactory)
         def serverMonitor = Stub(ServerMonitor)
         def internalConnection = Stub(InternalConnection)
-        def connection = Stub(AsyncConnection)
+        def connection = Stub(SyncAsyncConnection)
         def clusterTime = new ClusterClock()
 
         connectionPool.getAsync(_) >> {
@@ -112,7 +110,7 @@ class DefaultServerSpecification extends Specification {
         then:
         receivedConnection
         !receivedThrowable
-        1 * connectionFactory.createAsync(_, _, mode) >> connection
+        1 * connectionFactory.create(_, _, mode) >> connection
 
         where:
         mode << [SINGLE, MULTIPLE]

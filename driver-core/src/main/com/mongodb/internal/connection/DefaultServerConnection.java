@@ -23,9 +23,7 @@ import com.mongodb.async.SingleResultCallback;
 import com.mongodb.bulk.DeleteRequest;
 import com.mongodb.bulk.InsertRequest;
 import com.mongodb.bulk.UpdateRequest;
-import com.mongodb.connection.AsyncConnection;
 import com.mongodb.connection.ClusterConnectionMode;
-import com.mongodb.connection.Connection;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.connection.QueryResult;
 import com.mongodb.connection.SplittablePayload;
@@ -43,7 +41,7 @@ import static com.mongodb.connection.ServerType.SHARD_ROUTER;
 import static com.mongodb.internal.async.ErrorHandlingResultCallback.errorHandlingCallback;
 
 @SuppressWarnings("deprecation")  // because this class implements deprecated methods
-public class DefaultServerConnection extends AbstractReferenceCounted implements Connection, AsyncConnection {
+public class DefaultServerConnection extends AbstractReferenceCounted implements SyncAsyncConnection {
     private static final Logger LOGGER = Loggers.getLogger("connection");
     private final InternalConnection wrapped;
     private final ProtocolExecutor protocolExecutor;

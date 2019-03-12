@@ -106,7 +106,7 @@ class DefaultServer implements ClusterableServer {
                 if (t != null) {
                     callback.onResult(null, t);
                 } else {
-                    callback.onResult(connectionFactory.createAsync(result, new DefaultServerProtocolExecutor(), clusterConnectionMode),
+                    callback.onResult(connectionFactory.create(result, new DefaultServerProtocolExecutor(), clusterConnectionMode),
                                       null);
                 }
             }
