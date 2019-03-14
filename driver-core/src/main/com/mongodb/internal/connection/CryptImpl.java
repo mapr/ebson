@@ -38,15 +38,15 @@ import static com.mongodb.assertions.Assertions.notNull;
 class CryptImpl implements Crypt {
 
     private final MongoCrypt mongoCrypt;
-    private final SchemaRetriever schemaRetriever;
+    private final CollectionInfoRetriever collectionInfoRetriever;
     private final CommandMarker commandMarker;
     private final KeyVault keyVault;
     private final KeyManagementService keyManagementService;
 
-    CryptImpl(final MongoCrypt mongoCrypt, final SchemaRetriever schemaRetriever, final CommandMarker commandMarker,
+    CryptImpl(final MongoCrypt mongoCrypt, final CollectionInfoRetriever collectionInfoRetriever, final CommandMarker commandMarker,
               final KeyVault keyVault, final KeyManagementService keyManagementService) {
         this.mongoCrypt = mongoCrypt;
-        this.schemaRetriever = schemaRetriever;
+        this.collectionInfoRetriever = collectionInfoRetriever;
         this.commandMarker = commandMarker;
         this.keyVault = keyVault;
         this.keyManagementService = keyManagementService;
@@ -68,11 +68,11 @@ class CryptImpl implements Crypt {
                         encryptor.addNamespace(namespace.getFullName());
                         break;
                     case NEED_SCHEMA:
-                        BsonDocument schema = schemaRetriever.getSchema(namespace);
+                        BsonDocument schema = collectionInfoRetriever.getCollectionInfo(namespace);
                         encryptor.addCollectionInfo(schema);  // TODO: resolve issue with schema v. collectionInfo
                         break;
                     case NEED_MARKINGS:
-                        commandMarker.mark(encryptor.getSchema(), command);
+                        commandMarker.mark(databaseName, encryptor.getSchema(), command);
                         break;
                     case NEED_KEYS:
                         MongoKeyBroker keyBroker = encryptor.getKeyBroker();
@@ -131,6 +131,11 @@ class CryptImpl implements Crypt {
         }
     }
 
+    @Override
+    public void close() {
+        mongoCrypt.close();
+    }
+
     private void fetchKeys(final MongoKeyBroker keyBroker) {
         Iterator<BsonDocument> iterator = keyVault.find(keyBroker.getKeyFilter());
         while (iterator.hasNext()) {
@@ -149,8 +154,8 @@ class CryptImpl implements Crypt {
     }
 
     private void decryptKey(final MongoKeyDecryptor keyDecryptor) {
+        InputStream inputStream = keyManagementService.stream(keyDecryptor.getMessage());
         try {
-            InputStream inputStream = keyManagementService.stream(keyDecryptor.getMessage());
             byte[] bytes = new byte[4096];
 
             int bytesNeeded = keyDecryptor.bytesNeeded(bytes.length);
@@ -162,6 +167,12 @@ class CryptImpl implements Crypt {
             }
         } catch (IOException e) {
             throw new MongoException("Exception decrypting key", e);  // TODO: type
+        } finally {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                // ignore
+            }
         }
     }
 

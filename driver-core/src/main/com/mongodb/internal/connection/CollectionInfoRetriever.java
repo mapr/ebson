@@ -20,6 +20,6 @@ package com.mongodb.internal.connection;
 import com.mongodb.MongoNamespace;
 import org.bson.BsonDocument;
 
-public interface SchemaRetriever {
-    BsonDocument getSchema(MongoNamespace namespace);
+public interface CollectionInfoRetriever {
+    BsonDocument getCollectionInfo(MongoNamespace namespace);
 }

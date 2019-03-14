@@ -19,10 +19,12 @@ package com.mongodb.internal.connection;
 
 import org.bson.RawBsonDocument;
 
+import java.io.Closeable;
+
 /**
  * This class is NOT part of the public API.
  */
-interface Crypt {
+interface Crypt extends Closeable {
     /**
      * Encrypt the given command
      *
@@ -39,4 +41,7 @@ interface Crypt {
      * @return the decrypted command response
      */
     RawBsonDocument decrypt(RawBsonDocument commandResponse);
+
+    @Override
+    public void close();
 }

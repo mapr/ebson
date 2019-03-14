@@ -21,5 +21,5 @@ import org.bson.BsonDocument;
 import org.bson.RawBsonDocument;
 
 public interface CommandMarker {
-    BsonDocument mark(BsonDocument schema, RawBsonDocument command);
+    BsonDocument mark(final String databaseName, BsonDocument schema, RawBsonDocument command);
 }
