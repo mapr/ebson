@@ -59,25 +59,24 @@ class CryptImpl implements Crypt {
 
         MongoNamespace namespace = getNamespace(databaseName, command);
         MongoEncryptor encryptor = mongoCrypt.createEncryptor();
-        MongoEncryptor.State state = encryptor.getState();
 
         try {
             while (true) {
+                MongoEncryptor.State state = encryptor.getState();
                 switch (state) {
                     case NEED_NS:
                         encryptor.addNamespace(namespace.getFullName());
                         break;
                     case NEED_SCHEMA:
-                        BsonDocument schema = collectionInfoRetriever.getCollectionInfo(namespace);
-                        encryptor.addCollectionInfo(schema);  // TODO: resolve issue with schema v. collectionInfo
+                        BsonDocument collectionInfo = collectionInfoRetriever.getCollectionInfo(namespace);
+                        encryptor.addCollectionInfo(collectionInfo);
                         break;
                     case NEED_MARKINGS:
-                        commandMarker.mark(databaseName, encryptor.getSchema(), command);
+                        BsonDocument markedCommand = commandMarker.mark(databaseName, encryptor.getSchema(), command);
+                        encryptor.addMarkings(markedCommand);
                         break;
                     case NEED_KEYS:
-                        MongoKeyBroker keyBroker = encryptor.getKeyBroker();
-                        fetchKeys(keyBroker);
-                        decryptKeys(keyBroker);
+                        brokerKeys(encryptor.getKeyBroker());
                         encryptor.keyBrokerDone();
                         break;
                     case NEED_ENCRYPTION:
@@ -101,18 +100,16 @@ class CryptImpl implements Crypt {
         notNull("commandResponse", commandResponse);
 
         MongoDecryptor decryptor = mongoCrypt.createDecryptor();
-        MongoDecryptor.State state = decryptor.getState();
 
         try {
             while (true) {
+                MongoDecryptor.State state = decryptor.getState();
                 switch (state) {
                     case NEED_DOC:
                         decryptor.addDocument(commandResponse);
                         break;
                     case NEED_KEYS:
-                        MongoKeyBroker keyBroker = decryptor.getKeyBroker();
-                        fetchKeys(keyBroker);
-                        decryptKeys(keyBroker);
+                        brokerKeys(decryptor.getKeyBroker());
                         decryptor.keyBrokerDone();
                         break;
                     case NEED_DECRYPTION:
@@ -121,7 +118,7 @@ class CryptImpl implements Crypt {
                     case NO_DECRYPTION_NEEDED:
                         return commandResponse;
                     case DECRYPTED:
-                        return (RawBsonDocument) decryptor.getDecrypted(); //TODO: remove cast
+                        return (RawBsonDocument) decryptor.getDecrypted(); //TODO: change type
                     default:
                         throw new MongoInternalException("Unsupported decryptor state + " + state);
                 }
@@ -134,6 +131,11 @@ class CryptImpl implements Crypt {
     @Override
     public void close() {
         mongoCrypt.close();
+    }
+
+    private void brokerKeys(final MongoKeyBroker keyBroker) {
+        fetchKeys(keyBroker);
+        decryptKeys(keyBroker);
     }
 
     private void fetchKeys(final MongoKeyBroker keyBroker) {
@@ -166,7 +168,7 @@ class CryptImpl implements Crypt {
                 bytesNeeded = keyDecryptor.bytesNeeded(bytes.length);
             }
         } catch (IOException e) {
-            throw new MongoException("Exception decrypting key", e);  // TODO: type
+            throw new MongoException("Exception decrypting key", e);  // TODO: change exception type
         } finally {
             try {
                 inputStream.close();
