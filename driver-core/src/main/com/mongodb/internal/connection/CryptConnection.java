@@ -141,7 +141,7 @@ class CryptConnection implements SyncAsyncConnection {
 
         RawBsonDocument unencryptedCommand = new RawBsonDocument(bsonOutput.getInternalBuffer(), 0, bsonOutput.getSize());
 
-        BsonDocument encryptedCommand = crypt.encrypt(unencryptedCommand);
+        BsonDocument encryptedCommand = crypt.encrypt(database, unencryptedCommand);
 
         if (!DECRYPTED_RESPONSES.contains(commandName)) {
             return wrapped.command(database, encryptedCommand, commandFieldNameValidator, readPreference, commandResultDecoder,

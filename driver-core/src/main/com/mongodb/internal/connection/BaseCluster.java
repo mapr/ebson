@@ -19,6 +19,7 @@ package com.mongodb.internal.connection;
 import com.mongodb.MongoClientException;
 import com.mongodb.MongoIncompatibleDriverException;
 import com.mongodb.MongoInterruptedException;
+import com.mongodb.MongoNamespace;
 import com.mongodb.MongoTimeoutException;
 import com.mongodb.MongoWaitQueueFullException;
 import com.mongodb.ServerAddress;
@@ -30,6 +31,7 @@ import com.mongodb.connection.ClusterSettings;
 import com.mongodb.connection.ClusterType;
 import com.mongodb.connection.Server;
 import com.mongodb.connection.ServerDescription;
+import com.mongodb.crypt.capi.MongoCrypts;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
 import com.mongodb.event.ClusterClosedEvent;
@@ -41,6 +43,8 @@ import com.mongodb.selector.CompositeServerSelector;
 import com.mongodb.selector.ServerSelector;
 import org.bson.BsonTimestamp;
 
+import javax.net.ssl.SSLContext;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -376,7 +380,18 @@ abstract class BaseCluster implements Cluster {
     }
 
     protected ClusterableServer createServer(final ServerAddress serverAddress, final ServerListener serverListener) {
-        return serverFactory.create(serverAddress, createServerListener(serverFactory.getSettings(), serverListener), clusterClock);
+        try {
+            // TODO: configure Crypt properly
+            return serverFactory.create(serverAddress, createServerListener(serverFactory.getSettings(), serverListener), clusterClock,
+                    new CryptImpl(
+                            MongoCrypts.create(),
+                            new CollectionInfoRetrieverImpl(this),
+                            new CommandMarkerImpl(this), 
+                            new KeyVaultImpl(this, new MongoNamespace("test.vault")),
+                            new KeyManagementServiceImpl(SSLContext.getDefault(), "locahost", 40000, 10)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new MongoClientException("Wrapping exception from SSLContext.getDefault()", e);
+        }
     }
 
     private void throwIfIncompatible(final ClusterDescription curDescription) {

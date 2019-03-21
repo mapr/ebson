@@ -17,7 +17,6 @@
 
 package com.mongodb.internal.connection;
 
-import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.binding.ClusterBinding;
 import com.mongodb.connection.Cluster;
@@ -28,10 +27,6 @@ import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.BsonValueCodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
-
-import static com.mongodb.client.model.Filters.and;
-import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.exists;
 
 // TODO: should this even be done in core?  It means, for example, no session support
 class CollectionInfoRetrieverImpl implements CollectionInfoRetriever {
@@ -44,11 +39,9 @@ class CollectionInfoRetrieverImpl implements CollectionInfoRetriever {
     }
 
     @Override
-    public BsonDocument getCollectionInfo(final MongoNamespace namespace) {
-        BatchCursor<BsonDocument> batchCursor = new ListCollectionsOperation<BsonDocument>(namespace.getDatabaseName(),
-                new BsonDocumentCodec())
-                .filter(and(eq("name", namespace.getCollectionName()), exists("options.validator.$jsonSchema"))
-                        .toBsonDocument(BsonDocument.class, CODEC_REGISTRY))
+    public BsonDocument filter(final String databaseName, final BsonDocument filter) {
+        BatchCursor<BsonDocument> batchCursor = new ListCollectionsOperation<BsonDocument>(databaseName, new BsonDocumentCodec())
+                .filter(filter)
                 .execute(new ClusterBinding(cluster, ReadPreference.primaryPreferred()));
 
         try {

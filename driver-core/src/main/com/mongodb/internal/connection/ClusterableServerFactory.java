@@ -23,5 +23,8 @@ import com.mongodb.event.ServerListener;
 public interface ClusterableServerFactory {
     ClusterableServer create(ServerAddress serverAddress, ServerListener serverListener, ClusterClock clusterClock);
 
+    ClusterableServer create(ServerAddress serverAddress, ServerListener serverListener,
+                             ClusterClock clusterClock, Crypt crypt);
+
     ServerSettings getSettings();
 }

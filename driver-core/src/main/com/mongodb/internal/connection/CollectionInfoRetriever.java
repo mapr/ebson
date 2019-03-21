@@ -17,9 +17,8 @@
 
 package com.mongodb.internal.connection;
 
-import com.mongodb.MongoNamespace;
 import org.bson.BsonDocument;
 
 public interface CollectionInfoRetriever {
-    BsonDocument getCollectionInfo(MongoNamespace namespace);
+    BsonDocument filter(String databaseName, BsonDocument filter);
 }

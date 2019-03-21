@@ -21,9 +21,7 @@ import com.mongodb.MongoException;
 import com.mongodb.MongoInternalException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.crypt.capi.MongoCrypt;
-import com.mongodb.crypt.capi.MongoDecryptor;
-import com.mongodb.crypt.capi.MongoEncryptor;
-import com.mongodb.crypt.capi.MongoKeyBroker;
+import com.mongodb.crypt.capi.MongoCryptContext;
 import com.mongodb.crypt.capi.MongoKeyDecryptor;
 import org.bson.BsonDocument;
 import org.bson.RawBsonDocument;
@@ -34,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 import static com.mongodb.assertions.Assertions.notNull;
+import static com.mongodb.crypt.capi.MongoCryptContext.State;
 
 class CryptImpl implements Crypt {
 
@@ -58,40 +57,12 @@ class CryptImpl implements Crypt {
         notNull("command", command);
 
         MongoNamespace namespace = getNamespace(databaseName, command);
-        MongoEncryptor encryptor = mongoCrypt.createEncryptor();
+        MongoCryptContext encryptionContext = mongoCrypt.createEncryptionContext(namespace.getFullName());
 
         try {
-            while (true) {
-                MongoEncryptor.State state = encryptor.getState();
-                switch (state) {
-                    case NEED_NS:
-                        encryptor.addNamespace(namespace.getFullName());
-                        break;
-                    case NEED_SCHEMA:
-                        BsonDocument collectionInfo = collectionInfoRetriever.getCollectionInfo(namespace);
-                        encryptor.addCollectionInfo(collectionInfo);
-                        break;
-                    case NEED_MARKINGS:
-                        BsonDocument markedCommand = commandMarker.mark(databaseName, encryptor.getSchema(), command);
-                        encryptor.addMarkings(markedCommand);
-                        break;
-                    case NEED_KEYS:
-                        brokerKeys(encryptor.getKeyBroker());
-                        encryptor.keyBrokerDone();
-                        break;
-                    case NEED_ENCRYPTION:
-                        encryptor.encrypt();
-                        break;
-                    case NO_ENCRYPTION_NEEDED:
-                        return command;
-                    case ENCRYPTED:
-                        return (RawBsonDocument) encryptor.getEncryptedCommand(); // TODO: change type
-                    default:
-                        throw new MongoInternalException("Unsupported encryptor state + " + state);
-                }
-            }
+            return executeStateMachine(encryptionContext, databaseName, command);
         } finally {
-            encryptor.close();
+            encryptionContext.close();
         }
     }
 
@@ -99,60 +70,72 @@ class CryptImpl implements Crypt {
     public RawBsonDocument decrypt(final RawBsonDocument commandResponse) {
         notNull("commandResponse", commandResponse);
 
-        MongoDecryptor decryptor = mongoCrypt.createDecryptor();
+        MongoCryptContext decryptionContext = mongoCrypt.createDecryptionContext(commandResponse);
 
         try {
-            while (true) {
-                MongoDecryptor.State state = decryptor.getState();
-                switch (state) {
-                    case NEED_DOC:
-                        decryptor.addDocument(commandResponse);
-                        break;
-                    case NEED_KEYS:
-                        brokerKeys(decryptor.getKeyBroker());
-                        decryptor.keyBrokerDone();
-                        break;
-                    case NEED_DECRYPTION:
-                        decryptor.decrypt();
-                        break;
-                    case NO_DECRYPTION_NEEDED:
-                        return commandResponse;
-                    case DECRYPTED:
-                        return (RawBsonDocument) decryptor.getDecrypted(); //TODO: change type
-                    default:
-                        throw new MongoInternalException("Unsupported decryptor state + " + state);
-                }
-            }
+            return executeStateMachine(decryptionContext, null, commandResponse);
         } finally {
-            decryptor.close();
+            decryptionContext.close();
         }
     }
+
+    private RawBsonDocument executeStateMachine(final MongoCryptContext cryptContext, final String databaseName,
+                                                final RawBsonDocument defaultResponse) {
+        while (true) {
+            State state = cryptContext.getState();
+            switch (state) {
+                case NEED_MONGO_COLLINFO:
+                    BsonDocument collectionInfo = collectionInfoRetriever.filter(databaseName, cryptContext.getMongoOperation());
+                    if (collectionInfo != null) {
+                        cryptContext.addMongoOperationResult(collectionInfo);
+                    }
+                    cryptContext.completeMongoOperation();
+                    break;
+                case NEED_MONGO_MARKINGS:
+                    BsonDocument markedCommand = commandMarker.mark(databaseName, cryptContext.getMongoOperation(), defaultResponse);
+                    cryptContext.addMongoOperationResult(markedCommand);
+                    cryptContext.completeMongoOperation();
+                    break;
+                case NEED_MONGO_KEYS:
+                    fetchKeys(cryptContext);
+                    break;
+                case NEED_KMS:
+                    decryptKeys(cryptContext);
+                    break;
+                case READY:
+                    return (RawBsonDocument) cryptContext.finish();
+                case NO_ENCRYPTION_NEEDED:
+                    return defaultResponse;
+                case DONE:
+                    // TODO: nothing to do here?
+                    break;
+                default:
+                    throw new MongoInternalException("Unsupported encryptor state + " + state);
+            }
+        }
+    }
+
 
     @Override
     public void close() {
         mongoCrypt.close();
     }
 
-    private void brokerKeys(final MongoKeyBroker keyBroker) {
-        fetchKeys(keyBroker);
-        decryptKeys(keyBroker);
-    }
-
-    private void fetchKeys(final MongoKeyBroker keyBroker) {
-        Iterator<BsonDocument> iterator = keyVault.find(keyBroker.getKeyFilter());
+    private void fetchKeys(final MongoCryptContext keyBroker) {
+        Iterator<BsonDocument> iterator = keyVault.find(keyBroker.getMongoOperation());
         while (iterator.hasNext()) {
-            keyBroker.addKey(iterator.next());
+            keyBroker.addMongoOperationResult(iterator.next());
         }
-        keyBroker.doneAddingKeys();
+        keyBroker.completeMongoOperation();
     }
 
-    private void decryptKeys(final MongoKeyBroker keyBroker) {
-        MongoKeyDecryptor keyDecryptor = keyBroker.nextDecryptor();
+    private void decryptKeys(final MongoCryptContext cryptContext) {
+        MongoKeyDecryptor keyDecryptor = cryptContext.nextKeyDecryptor();
         while (keyDecryptor != null) {
             decryptKey(keyDecryptor);
-            keyBroker.addDecryptedKey(keyDecryptor);
-            keyDecryptor = keyBroker.nextDecryptor();
+            keyDecryptor = cryptContext.nextKeyDecryptor();
         }
+        cryptContext.completeKeyDecryptors();
     }
 
     private void decryptKey(final MongoKeyDecryptor keyDecryptor) {
@@ -160,12 +143,12 @@ class CryptImpl implements Crypt {
         try {
             byte[] bytes = new byte[4096];
 
-            int bytesNeeded = keyDecryptor.bytesNeeded(bytes.length);
+            int bytesNeeded = keyDecryptor.bytesNeeded();
 
             while (bytesNeeded > 0) {
                 int bytesRead = inputStream.read(bytes, 0, bytesNeeded);
                 keyDecryptor.feed(ByteBuffer.wrap(bytes, 0, bytesRead));
-                bytesNeeded = keyDecryptor.bytesNeeded(bytes.length);
+                bytesNeeded = keyDecryptor.bytesNeeded();
             }
         } catch (IOException e) {
             throw new MongoException("Exception decrypting key", e);  // TODO: change exception type
@@ -179,6 +162,8 @@ class CryptImpl implements Crypt {
     }
 
     private MongoNamespace getNamespace(final String databaseName, final RawBsonDocument command) {
+        // TODO: aggregate command sometimes doesn't have a collection as the value of the first key, e.g. for $currentOp
+        // What to do about that?
         return new MongoNamespace(databaseName, command.getString(command.getFirstKey()).getValue());
     }
 }

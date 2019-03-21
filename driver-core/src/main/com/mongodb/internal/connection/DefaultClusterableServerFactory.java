@@ -67,6 +67,12 @@ public class DefaultClusterableServerFactory implements ClusterableServerFactory
     @Override
     public ClusterableServer create(final ServerAddress serverAddress, final ServerListener serverListener,
                                     final ClusterClock clusterClock) {
+        return create(serverAddress, serverListener, clusterClock, null);
+    }
+
+    @Override
+    public ClusterableServer create(final ServerAddress serverAddress, final ServerListener serverListener,
+                                    final ClusterClock clusterClock, final Crypt crypt) {
         ConnectionPool connectionPool = new DefaultConnectionPool(new ServerId(clusterId, serverAddress),
                 new InternalStreamConnectionFactory(streamFactory, credentialList, applicationName,
                         mongoDriverInformation, compressorList, commandListener), connectionPoolSettings);
@@ -75,12 +81,17 @@ public class DefaultClusterableServerFactory implements ClusterableServerFactory
 
         // no credentials, compressor list, or command listener for the server monitor factory
         ServerMonitorFactory serverMonitorFactory =
-            new DefaultServerMonitorFactory(new ServerId(clusterId, serverAddress), serverSettings, clusterClock,
-                    new InternalStreamConnectionFactory(heartbeatStreamFactory, Collections.<MongoCredentialWithCache>emptyList(),
-                            applicationName, mongoDriverInformation, Collections.<MongoCompressor>emptyList(), null), connectionPool);
+                new DefaultServerMonitorFactory(new ServerId(clusterId, serverAddress), serverSettings, clusterClock,
+                        new InternalStreamConnectionFactory(heartbeatStreamFactory, Collections.<MongoCredentialWithCache>emptyList(),
+                                applicationName, mongoDriverInformation, Collections.<MongoCompressor>emptyList(), null), connectionPool);
 
+
+        ConnectionFactory connectionFactory = new DefaultConnectionFactory();
+        if (crypt != null) {
+            connectionFactory = new CryptConnectionFactory(connectionFactory, crypt);
+        }
         return new DefaultServer(new ServerId(clusterId, serverAddress), clusterSettings.getMode(), connectionPool,
-                new DefaultConnectionFactory(), serverMonitorFactory, serverListener, commandListener, clusterClock);
+                connectionFactory, serverMonitorFactory, serverListener, commandListener, clusterClock);
     }
 
     @Override

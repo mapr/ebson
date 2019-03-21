@@ -57,6 +57,12 @@ public class DefaultTestClusterableServerFactory implements ClusterableServerFac
     }
 
     @Override
+    public ClusterableServer create(final ServerAddress serverAddress, final ServerListener serverListener, final ClusterClock clusterClock,
+                                    final Crypt crypt) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ServerSettings getSettings() {
         return settings;
     }

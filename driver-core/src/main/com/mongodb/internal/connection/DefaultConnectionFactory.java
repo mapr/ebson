@@ -21,7 +21,7 @@ import com.mongodb.connection.ClusterConnectionMode;
 class DefaultConnectionFactory implements ConnectionFactory {
     @Override
     public SyncAsyncConnection create(final InternalConnection internalConnection, final ProtocolExecutor executor,
-                             final ClusterConnectionMode clusterConnectionMode) {
+                                      final ClusterConnectionMode clusterConnectionMode) {
         return new DefaultServerConnection(internalConnection, executor, clusterConnectionMode);
     }
 }
