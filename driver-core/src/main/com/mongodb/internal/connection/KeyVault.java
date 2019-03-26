@@ -17,10 +17,13 @@
 
 package com.mongodb.internal.connection;
 
+import com.mongodb.connection.Cluster;
 import org.bson.BsonDocument;
 
 import java.util.Iterator;
 
 public interface KeyVault {
     Iterator<BsonDocument> find(BsonDocument keyFilter);
+
+    void init(Cluster cluster);
 }

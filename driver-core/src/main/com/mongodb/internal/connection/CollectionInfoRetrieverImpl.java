@@ -24,18 +24,13 @@ import com.mongodb.operation.BatchCursor;
 import com.mongodb.operation.ListCollectionsOperation;
 import org.bson.BsonDocument;
 import org.bson.codecs.BsonDocumentCodec;
-import org.bson.codecs.BsonValueCodecProvider;
-import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.codecs.configuration.CodecRegistry;
 
 // TODO: should this even be done in core?  It means, for example, no session support
-class CollectionInfoRetrieverImpl implements CollectionInfoRetriever {
-    private static CodecRegistry CODEC_REGISTRY = CodecRegistries.fromProviders(new BsonValueCodecProvider());
+public class CollectionInfoRetrieverImpl implements CollectionInfoRetriever {
 
-    private final Cluster cluster;
+    private volatile Cluster cluster;
 
-    public CollectionInfoRetrieverImpl(final Cluster cluster) {
-        this.cluster = cluster;
+    public CollectionInfoRetrieverImpl() {
     }
 
     @Override
@@ -53,5 +48,10 @@ class CollectionInfoRetrieverImpl implements CollectionInfoRetriever {
         } finally {
             batchCursor.close();
         }
+    }
+
+    @Override
+    public void init(final Cluster cluster) {
+        this.cluster = cluster;
     }
 }

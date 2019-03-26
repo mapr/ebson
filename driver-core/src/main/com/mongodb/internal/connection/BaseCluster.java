@@ -19,7 +19,6 @@ package com.mongodb.internal.connection;
 import com.mongodb.MongoClientException;
 import com.mongodb.MongoIncompatibleDriverException;
 import com.mongodb.MongoInterruptedException;
-import com.mongodb.MongoNamespace;
 import com.mongodb.MongoTimeoutException;
 import com.mongodb.MongoWaitQueueFullException;
 import com.mongodb.ServerAddress;
@@ -31,7 +30,6 @@ import com.mongodb.connection.ClusterSettings;
 import com.mongodb.connection.ClusterType;
 import com.mongodb.connection.Server;
 import com.mongodb.connection.ServerDescription;
-import com.mongodb.crypt.capi.MongoCrypts;
 import com.mongodb.diagnostics.logging.Logger;
 import com.mongodb.diagnostics.logging.Loggers;
 import com.mongodb.event.ClusterClosedEvent;
@@ -43,8 +41,6 @@ import com.mongodb.selector.CompositeServerSelector;
 import com.mongodb.selector.ServerSelector;
 import org.bson.BsonTimestamp;
 
-import javax.net.ssl.SSLContext;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -77,6 +73,7 @@ abstract class BaseCluster implements Cluster {
     private final ClusterId clusterId;
     private final ClusterSettings settings;
     private final ClusterListener clusterListener;
+    private final Crypt crypt;
     private final Deque<ServerSelectionRequest> waitQueue = new ConcurrentLinkedDeque<ServerSelectionRequest>();
     private final AtomicInteger waitQueueSize = new AtomicInteger(0);
     private final ClusterClock clusterClock = new ClusterClock();
@@ -85,14 +82,20 @@ abstract class BaseCluster implements Cluster {
     private volatile boolean isClosed;
     private volatile ClusterDescription description;
 
-    BaseCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory) {
+    BaseCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
+                final Crypt crypt) {
         this.clusterId = notNull("clusterId", clusterId);
         this.settings = notNull("settings", settings);
         this.serverFactory = notNull("serverFactory", serverFactory);
         this.clusterListener = getClusterListener(settings);
+        this.crypt = crypt;
         clusterListener.clusterOpening(new ClusterOpeningEvent(clusterId));
         description = new ClusterDescription(settings.getMode(), ClusterType.UNKNOWN, Collections.<ServerDescription>emptyList(),
                 settings, serverFactory.getSettings());
+
+        if (this.crypt != null) {
+            this.crypt.init(this);
+        }
     }
 
     @Override
@@ -380,18 +383,7 @@ abstract class BaseCluster implements Cluster {
     }
 
     protected ClusterableServer createServer(final ServerAddress serverAddress, final ServerListener serverListener) {
-        try {
-            // TODO: configure Crypt properly
-            return serverFactory.create(serverAddress, createServerListener(serverFactory.getSettings(), serverListener), clusterClock,
-                    new CryptImpl(
-                            MongoCrypts.create(),
-                            new CollectionInfoRetrieverImpl(this),
-                            new CommandMarkerImpl(this), 
-                            new KeyVaultImpl(this, new MongoNamespace("test.vault")),
-                            new KeyManagementServiceImpl(SSLContext.getDefault(), "locahost", 40000, 10)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new MongoClientException("Wrapping exception from SSLContext.getDefault()", e);
-        }
+        return serverFactory.create(serverAddress, createServerListener(serverFactory.getSettings(), serverListener), clusterClock, crypt);
     }
 
     private void throwIfIncompatible(final ClusterDescription curDescription) {

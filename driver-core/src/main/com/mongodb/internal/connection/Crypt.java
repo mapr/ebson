@@ -17,6 +17,7 @@
 
 package com.mongodb.internal.connection;
 
+import com.mongodb.connection.Cluster;
 import org.bson.RawBsonDocument;
 
 import java.io.Closeable;
@@ -24,7 +25,15 @@ import java.io.Closeable;
 /**
  * This class is NOT part of the public API.
  */
-interface Crypt extends Closeable {
+public interface Crypt extends Closeable {
+
+    /**
+     * Initialize with the cluster that this is providing encryption for.
+     *
+     * @param cluster the cluster
+     */
+    void init(Cluster cluster);
+
     /**
      * Encrypt the given command
      *

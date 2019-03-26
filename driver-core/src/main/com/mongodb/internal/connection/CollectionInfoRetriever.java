@@ -17,8 +17,11 @@
 
 package com.mongodb.internal.connection;
 
+import com.mongodb.connection.Cluster;
 import org.bson.BsonDocument;
 
 public interface CollectionInfoRetriever {
     BsonDocument filter(String databaseName, BsonDocument filter);
+
+    void init(Cluster cluster);
 }

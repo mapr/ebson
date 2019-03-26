@@ -324,7 +324,7 @@ public final class ClusterFixture {
                 ServerSettings.builder().build(),
                 ConnectionPoolSettings.builder().maxSize(1).maxWaitQueueSize(1).build(),
                 streamFactory, streamFactory, credentials, null, null, null,
-                Collections.<MongoCompressor>emptyList());
+                Collections.<MongoCompressor>emptyList(), false);
     }
 
     @SuppressWarnings("deprecation")
@@ -335,7 +335,7 @@ public final class ClusterFixture {
                 streamFactory,
                 new SocketStreamFactory(SocketSettings.builder().build(), getSslSettings(connectionString)),
                 connectionString.getCredentialList(), null, null, null,
-                connectionString.getCompressorList());
+                connectionString.getCompressorList(), false);
     }
 
     public static StreamFactory getStreamFactory() {

@@ -44,7 +44,12 @@ public final class SingleServerCluster extends BaseCluster {
     private final ClusterableServer server;
 
     public SingleServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory) {
-        super(clusterId, settings, serverFactory);
+        this(clusterId, settings, serverFactory, null);
+    }
+
+    public SingleServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
+                               final Crypt crypt) {
+        super(clusterId, settings, serverFactory, crypt);
         isTrue("one server in a direct cluster", settings.getHosts().size() == 1);
         isTrue("connection mode is single", settings.getMode() == ClusterConnectionMode.SINGLE);
 

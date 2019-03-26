@@ -31,13 +31,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-class KeyVaultImpl implements KeyVault {
-    private final Cluster cluster;
+public class KeyVaultImpl implements KeyVault {
+    private volatile Cluster cluster;
     private final MongoNamespace namespace;
 
-    KeyVaultImpl(final Cluster cluster, final MongoNamespace namespace) {
-        this.cluster = cluster;
+    public KeyVaultImpl(final MongoNamespace namespace) {
         this.namespace = namespace;
+    }
+
+    @Override
+    public void init(final Cluster cluster) {
+        this.cluster = cluster;
     }
 
     @Override

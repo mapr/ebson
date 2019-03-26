@@ -21,5 +21,5 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 public interface KeyManagementService {
-    InputStream stream(ByteBuffer message);
+    InputStream stream(String host, ByteBuffer message);
 }

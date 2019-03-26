@@ -76,6 +76,7 @@ class CryptConnection implements SyncAsyncConnection {
             "aggregate",
             "find",
             "findAndModify",
+            "getMore",
 
             /* TODO: should these be supported?  Or rejected if used? */
             "distinct",
@@ -142,6 +143,7 @@ class CryptConnection implements SyncAsyncConnection {
         RawBsonDocument unencryptedCommand = new RawBsonDocument(bsonOutput.getInternalBuffer(), 0, bsonOutput.getSize());
 
         BsonDocument encryptedCommand = crypt.encrypt(database, unencryptedCommand);
+
 
         if (!DECRYPTED_RESPONSES.contains(commandName)) {
             return wrapped.command(database, encryptedCommand, commandFieldNameValidator, readPreference, commandResultDecoder,

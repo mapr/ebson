@@ -20,11 +20,15 @@ package com.mongodb.internal.connection;
 import com.mongodb.MongoException;
 import com.mongodb.MongoInternalException;
 import com.mongodb.MongoNamespace;
+import com.mongodb.connection.Cluster;
 import com.mongodb.crypt.capi.MongoCrypt;
 import com.mongodb.crypt.capi.MongoCryptContext;
 import com.mongodb.crypt.capi.MongoKeyDecryptor;
+import org.bson.BsonBinaryReader;
 import org.bson.BsonDocument;
 import org.bson.RawBsonDocument;
+import org.bson.codecs.BsonDocumentCodec;
+import org.bson.codecs.DecoderContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +38,7 @@ import java.util.Iterator;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.crypt.capi.MongoCryptContext.State;
 
-class CryptImpl implements Crypt {
+public class CryptImpl implements Crypt {
 
     private final MongoCrypt mongoCrypt;
     private final CollectionInfoRetriever collectionInfoRetriever;
@@ -42,13 +46,19 @@ class CryptImpl implements Crypt {
     private final KeyVault keyVault;
     private final KeyManagementService keyManagementService;
 
-    CryptImpl(final MongoCrypt mongoCrypt, final CollectionInfoRetriever collectionInfoRetriever, final CommandMarker commandMarker,
+    public CryptImpl(final MongoCrypt mongoCrypt, final CollectionInfoRetriever collectionInfoRetriever, final CommandMarker commandMarker,
               final KeyVault keyVault, final KeyManagementService keyManagementService) {
         this.mongoCrypt = mongoCrypt;
         this.collectionInfoRetriever = collectionInfoRetriever;
         this.commandMarker = commandMarker;
         this.keyVault = keyVault;
         this.keyManagementService = keyManagementService;
+    }
+
+    @Override
+    public void init(final Cluster cluster) {
+        collectionInfoRetriever.init(cluster);
+        keyVault.init(cluster);
     }
 
     @Override
@@ -60,7 +70,15 @@ class CryptImpl implements Crypt {
         MongoCryptContext encryptionContext = mongoCrypt.createEncryptionContext(namespace.getFullName());
 
         try {
-            return executeStateMachine(encryptionContext, databaseName, command);
+            RawBsonDocument encryptedDocument = executeStateMachine(encryptionContext, databaseName, command);
+
+            // TODO: hopefully remove this
+            BsonDocument clonedDocument = new BsonDocumentCodec()
+                    .decode(new BsonBinaryReader(encryptedDocument.getByteBuffer().asNIO()), DecoderContext.builder().build());
+            clonedDocument.remove("$readPreference");
+            clonedDocument.remove("$db");
+
+            return new RawBsonDocument(clonedDocument, new BsonDocumentCodec());
         } finally {
             encryptionContext.close();
         }
@@ -104,7 +122,7 @@ class CryptImpl implements Crypt {
                     break;
                 case READY:
                     return (RawBsonDocument) cryptContext.finish();
-                case NO_ENCRYPTION_NEEDED:
+                case NOTHING_TO_DO:
                     return defaultResponse;
                 case DONE:
                     // TODO: nothing to do here?
@@ -139,7 +157,7 @@ class CryptImpl implements Crypt {
     }
 
     private void decryptKey(final MongoKeyDecryptor keyDecryptor) {
-        InputStream inputStream = keyManagementService.stream(keyDecryptor.getMessage());
+        InputStream inputStream = keyManagementService.stream(keyDecryptor.getHostName(), keyDecryptor.getMessage());
         try {
             byte[] bytes = new byte[4096];
 

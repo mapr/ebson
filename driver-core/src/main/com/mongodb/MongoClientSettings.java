@@ -87,6 +87,8 @@ public final class MongoClientSettings {
     private final String applicationName;
     private final List<MongoCompressor> compressorList;
 
+    private final boolean enableClientSideEncryption;
+
     /**
      * Gets the default codec registry.  It includes the following providers:
      *
@@ -151,6 +153,9 @@ public final class MongoClientSettings {
         private MongoCredential credential;
         private String applicationName;
         private List<MongoCompressor> compressorList = Collections.emptyList();
+
+        // TODO: expand this
+        private boolean enableClientSideEncryption;
 
         private Builder() {
         }
@@ -415,6 +420,17 @@ public final class MongoClientSettings {
         }
 
         /**
+         * Sets whether client side encryption is enabled
+         *
+         * @param enableClientSideEncryption enabled or not
+         * @return this
+         */
+        public Builder enableClientSideEncryption(final boolean enableClientSideEncryption) {
+            this.enableClientSideEncryption = enableClientSideEncryption;
+            return this;
+        }
+
+        /**
          * Build an instance of {@code MongoClientSettings}.
          *
          * @return the settings from this builder
@@ -539,6 +555,15 @@ public final class MongoClientSettings {
     }
 
     /**
+     * Gets whether client side encryption is enabled
+     *
+     * @return whether it's enabled
+     */
+    public boolean isEnableClientSideEncryption() {
+        return enableClientSideEncryption;
+    }
+
+    /**
      * Gets the cluster settings.
      *
      * @return the cluster settings
@@ -618,6 +643,7 @@ public final class MongoClientSettings {
         connectionPoolSettings = builder.connectionPoolSettingsBuilder.build();
         sslSettings = builder.sslSettingsBuilder.build();
         compressorList = builder.compressorList;
+        enableClientSideEncryption = builder.enableClientSideEncryption;
 
         SocketSettings.Builder heartbeatSocketSettingsBuilder = SocketSettings.builder()
                 .readTimeout(socketSettings.getConnectTimeout(MILLISECONDS), MILLISECONDS)

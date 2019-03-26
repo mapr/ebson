@@ -30,19 +30,17 @@ import java.nio.ByteBuffer;
 
 public class KeyManagementServiceImpl implements KeyManagementService {
     private final SSLContext sslContext;
-    private final String host;
     private final int port;
     private int timeoutMillis;
 
-    public KeyManagementServiceImpl(final SSLContext sslContext, final String host, final int port, final int timeoutMillis) {
+    public KeyManagementServiceImpl(final SSLContext sslContext, final int port, final int timeoutMillis) {
         this.sslContext = sslContext;
-        this.host = host;
         this.port = port;
         this.timeoutMillis = timeoutMillis;
     }
 
     @Override
-    public InputStream stream(final ByteBuffer message) {
+    public InputStream stream(final String host, final ByteBuffer message) {
         try {
             Socket socket = sslContext.getSocketFactory().createSocket();
             socket.setSoTimeout(timeoutMillis);
@@ -54,7 +52,6 @@ public class KeyManagementServiceImpl implements KeyManagementService {
 
             message.get(bytes);
             outputStream.write(bytes);
-            socket.shutdownOutput();
 
             return socket.getInputStream();
 
