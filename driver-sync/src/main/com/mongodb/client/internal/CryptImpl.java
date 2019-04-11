@@ -12,15 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
 import com.mongodb.MongoException;
 import com.mongodb.MongoInternalException;
 import com.mongodb.MongoNamespace;
-import com.mongodb.connection.Cluster;
 import com.mongodb.crypt.capi.MongoCrypt;
 import com.mongodb.crypt.capi.MongoCryptContext;
 import com.mongodb.crypt.capi.MongoKeyDecryptor;
@@ -47,18 +45,12 @@ public class CryptImpl implements Crypt {
     private final KeyManagementService keyManagementService;
 
     public CryptImpl(final MongoCrypt mongoCrypt, final CollectionInfoRetriever collectionInfoRetriever, final CommandMarker commandMarker,
-              final KeyVault keyVault, final KeyManagementService keyManagementService) {
+                     final KeyVault keyVault, final KeyManagementService keyManagementService) {
         this.mongoCrypt = mongoCrypt;
         this.collectionInfoRetriever = collectionInfoRetriever;
         this.commandMarker = commandMarker;
         this.keyVault = keyVault;
         this.keyManagementService = keyManagementService;
-    }
-
-    @Override
-    public void init(final Cluster cluster) {
-        collectionInfoRetriever.init(cluster);
-        keyVault.init(cluster);
     }
 
     @Override

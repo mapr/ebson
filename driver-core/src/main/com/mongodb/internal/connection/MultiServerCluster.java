@@ -22,15 +22,9 @@ import com.mongodb.connection.ClusterSettings;
 import static com.mongodb.assertions.Assertions.isTrue;
 
 public final class MultiServerCluster extends AbstractMultiServerCluster {
-
     public MultiServerCluster(final ClusterId clusterId, final ClusterSettings settings,
                               final ClusterableServerFactory serverFactory) {
-        this(clusterId, settings, serverFactory, null);
-    }
-
-    public MultiServerCluster(final ClusterId clusterId, final ClusterSettings settings,
-                              final ClusterableServerFactory serverFactory, final Crypt crypt) {
-        super(clusterId, settings, serverFactory, crypt);
+        super(clusterId, settings, serverFactory);
         isTrue("srvHost is null", settings.getSrvHost() == null);
         initialize(settings.getHosts());
     }

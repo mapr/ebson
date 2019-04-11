@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
-import com.mongodb.connection.AsyncConnection;
-import com.mongodb.connection.ClusterConnectionMode;
-import com.mongodb.connection.Connection;
+import com.mongodb.client.MongoClient;
+import com.mongodb.lang.Nullable;
+import org.bson.BsonDocument;
 
-interface ConnectionFactory {
-    Connection create(InternalConnection internalConnection, ProtocolExecutor executor, ClusterConnectionMode clusterConnectionMode);
+class CollectionInfoRetrieverImpl implements CollectionInfoRetriever {
 
-    AsyncConnection createAsync(InternalConnection internalConnection, ProtocolExecutor executor,
-                                ClusterConnectionMode clusterConnectionMode);
+    private final MongoClient client;
+
+    CollectionInfoRetrieverImpl(MongoClient client) {
+        this.client = client;
+    }
+
+    @Override
+    @Nullable
+    public BsonDocument filter(final String databaseName, final BsonDocument filter) {
+        return client.getDatabase(databaseName).listCollections(BsonDocument.class).filter(filter).first();
+    }
 }

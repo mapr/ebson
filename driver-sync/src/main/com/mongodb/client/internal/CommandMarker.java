@@ -12,16 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
-import com.mongodb.connection.AsyncConnection;
-import com.mongodb.connection.Connection;
+import org.bson.BsonDocument;
+import org.bson.RawBsonDocument;
 
-interface SyncAsyncConnection extends Connection, AsyncConnection {
-
-    @Override
-    SyncAsyncConnection retain();
+public interface CommandMarker {
+    BsonDocument mark(final String databaseName, BsonDocument schema, RawBsonDocument command);
 }

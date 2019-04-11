@@ -12,14 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
 import org.bson.BsonDocument;
-import org.bson.RawBsonDocument;
 
-public interface CommandMarker {
-    BsonDocument mark(final String databaseName, BsonDocument schema, RawBsonDocument command);
+import java.util.Iterator;
+
+interface KeyVault {
+    Iterator<BsonDocument> find(BsonDocument keyFilter);
 }

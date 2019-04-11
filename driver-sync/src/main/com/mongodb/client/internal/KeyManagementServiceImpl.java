@@ -12,10 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
 import com.mongodb.MongoException;
 
@@ -28,12 +27,12 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
-public class KeyManagementServiceImpl implements KeyManagementService {
+class KeyManagementServiceImpl implements KeyManagementService {
     private final SSLContext sslContext;
     private final int port;
     private int timeoutMillis;
 
-    public KeyManagementServiceImpl(final SSLContext sslContext, final int port, final int timeoutMillis) {
+    KeyManagementServiceImpl(final SSLContext sslContext, final int port, final int timeoutMillis) {
         this.sslContext = sslContext;
         this.port = port;
         this.timeoutMillis = timeoutMillis;

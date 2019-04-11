@@ -73,7 +73,6 @@ abstract class BaseCluster implements Cluster {
     private final ClusterId clusterId;
     private final ClusterSettings settings;
     private final ClusterListener clusterListener;
-    private final Crypt crypt;
     private final Deque<ServerSelectionRequest> waitQueue = new ConcurrentLinkedDeque<ServerSelectionRequest>();
     private final AtomicInteger waitQueueSize = new AtomicInteger(0);
     private final ClusterClock clusterClock = new ClusterClock();
@@ -82,20 +81,14 @@ abstract class BaseCluster implements Cluster {
     private volatile boolean isClosed;
     private volatile ClusterDescription description;
 
-    BaseCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
-                final Crypt crypt) {
+    BaseCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory) {
         this.clusterId = notNull("clusterId", clusterId);
         this.settings = notNull("settings", settings);
         this.serverFactory = notNull("serverFactory", serverFactory);
         this.clusterListener = getClusterListener(settings);
-        this.crypt = crypt;
         clusterListener.clusterOpening(new ClusterOpeningEvent(clusterId));
         description = new ClusterDescription(settings.getMode(), ClusterType.UNKNOWN, Collections.<ServerDescription>emptyList(),
                 settings, serverFactory.getSettings());
-
-        if (this.crypt != null) {
-            this.crypt.init(this);
-        }
     }
 
     @Override
@@ -383,7 +376,7 @@ abstract class BaseCluster implements Cluster {
     }
 
     protected ClusterableServer createServer(final ServerAddress serverAddress, final ServerListener serverListener) {
-        return serverFactory.create(serverAddress, createServerListener(serverFactory.getSettings(), serverListener), clusterClock, crypt);
+        return serverFactory.create(serverAddress, createServerListener(serverFactory.getSettings(), serverListener), clusterClock);
     }
 
     private void throwIfIncompatible(final ClusterDescription curDescription) {

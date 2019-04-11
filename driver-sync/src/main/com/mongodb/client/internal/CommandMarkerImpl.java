@@ -12,24 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
 import com.mongodb.MongoClientException;
 import com.mongodb.MongoTimeoutException;
 import com.mongodb.ReadConcern;
 import com.mongodb.ReadPreference;
-import com.mongodb.binding.ClusterBinding;
-import com.mongodb.connection.Cluster;
-import com.mongodb.operation.CommandReadOperation;
+import com.mongodb.client.MongoClient;
+import com.mongodb.internal.connection.ElementExtendingBsonWriter;
 import org.bson.BsonBinaryReader;
 import org.bson.BsonBinaryWriter;
 import org.bson.BsonDocument;
 import org.bson.BsonElement;
 import org.bson.RawBsonDocument;
-import org.bson.codecs.RawBsonDocumentCodec;
 import org.bson.io.BasicOutputBuffer;
 
 import java.io.IOException;
@@ -37,13 +34,13 @@ import java.io.IOException;
 import static java.util.Collections.singletonList;
 
 @SuppressWarnings("UseOfProcessBuilder")
-public class CommandMarkerImpl implements CommandMarker {
-    private final Cluster cluster;
+class CommandMarkerImpl implements CommandMarker {
+    private MongoClient client;
     private final ProcessBuilder processBuilder;
     private boolean active;
 
-    public CommandMarkerImpl(final Cluster cluster, final String path) {
-        this.cluster = cluster;
+    CommandMarkerImpl(final MongoClient client, final String path) {
+        this.client = client;
         this.active = false;
         processBuilder = new ProcessBuilder(path,
                 "--idleShutdownTimeoutSecs", "60",
@@ -79,8 +76,10 @@ public class CommandMarkerImpl implements CommandMarker {
     }
 
     private BsonDocument executeCommand(final String databaseName, final RawBsonDocument markableCommand) {
-        return new CommandReadOperation<RawBsonDocument>(databaseName, markableCommand, new RawBsonDocumentCodec())
-                .execute(new ClusterBinding(cluster, ReadPreference.primary(), ReadConcern.DEFAULT));
+        return client.getDatabase(databaseName)
+                .withReadConcern(ReadConcern.DEFAULT)
+                .withReadPreference(ReadPreference.primary())
+                .runCommand(markableCommand, BsonDocument.class);
     }
 
     private synchronized void spawn() {

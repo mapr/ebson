@@ -28,6 +28,7 @@ import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.ListDatabasesIterable;
 import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.changestream.ChangeStreamLevel;
@@ -37,16 +38,21 @@ import com.mongodb.connection.SocketSettings;
 import com.mongodb.connection.SocketStreamFactory;
 import com.mongodb.connection.StreamFactory;
 import com.mongodb.connection.StreamFactoryFactory;
+import com.mongodb.crypt.capi.MongoCryptOptions;
+import com.mongodb.crypt.capi.MongoCrypts;
 import com.mongodb.lang.Nullable;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
+import javax.net.ssl.SSLContext;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
 
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.internal.event.EventListenerHelper.getCommandListener;
+import static java.util.Collections.singletonList;
 
 public final class MongoClientImpl implements MongoClient {
 
@@ -61,7 +67,12 @@ public final class MongoClientImpl implements MongoClient {
                            @Nullable final OperationExecutor operationExecutor) {
         this.settings = notNull("settings", settings);
         this.delegate = new MongoClientDelegate(notNull("cluster", cluster),
-                Collections.singletonList(settings.getCredential()), this, operationExecutor);
+                singletonList(settings.getCredential()), this, operationExecutor);
+    }
+
+
+    public void init() {
+        delegate.init(createCrypt(settings));
     }
 
     @Override
@@ -185,12 +196,12 @@ public final class MongoClientImpl implements MongoClient {
     private static Cluster createCluster(final MongoClientSettings settings,
                                          @Nullable final MongoDriverInformation mongoDriverInformation) {
         notNull("settings", settings);
-        List<MongoCredential> credentialList = settings.getCredential() != null ? Collections.singletonList(settings.getCredential())
+        List<MongoCredential> credentialList = settings.getCredential() != null ? singletonList(settings.getCredential())
                 : Collections.<MongoCredential>emptyList();
         return new DefaultClusterFactory().createCluster(settings.getClusterSettings(), settings.getServerSettings(),
                 settings.getConnectionPoolSettings(), getStreamFactory(settings, false), getStreamFactory(settings, true), credentialList,
                 getCommandListener(settings.getCommandListeners()), settings.getApplicationName(), mongoDriverInformation,
-                settings.getCompressorList(), settings.isEnableClientSideEncryption());
+                settings.getCompressorList());
     }
 
     private static StreamFactory getStreamFactory(final MongoClientSettings settings, final boolean isHeartbeat) {
@@ -215,6 +226,33 @@ public final class MongoClientImpl implements MongoClient {
                 return result.getString("name").getValue();
             }
         });
+    }
+
+    @Nullable
+    private Crypt createCrypt(final MongoClientSettings settings) {
+        if (settings.getKeyVaultOptions() == null) {
+            return null;
+        }
+
+        // TODO: this has to be closed
+        // TODO: make this configurable, but default according to platform
+        MongoClient mongocryptdClient =
+                MongoClients.create("mongodb://%2Ftmp%2Fmongocryptd.sock/?serverSelectionTimeoutMS=1000");
+        try {
+            return new CryptImpl(
+                    MongoCrypts.create(
+                            MongoCryptOptions.builder()
+                                    .accessKeyId(System.getProperty("awsAccessKey"))
+                                    .secretAccessKey(System.getProperty("awsSecretAccessKey"))
+                                    .build()),
+                    new CollectionInfoRetrieverImpl(this),
+                    new CommandMarkerImpl(mongocryptdClient, "mongocryptd"),
+                    new KeyVaultImpl(getDatabase("admin").getCollection("datakeys", BsonDocument.class)),
+                    new KeyManagementServiceImpl(SSLContext.getDefault(), 443, 10000));
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new MongoClientException("Unable to create default SSLContext", e);
+        }
     }
 }
 

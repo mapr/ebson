@@ -31,14 +31,10 @@ public final class DnsMultiServerCluster extends AbstractMultiServerCluster {
     private final DnsSrvRecordMonitor dnsSrvRecordMonitor;
     private volatile MongoException srvResolutionException;
 
-    public DnsMultiServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
-                                 final DnsSrvRecordMonitorFactory dnsSrvRecordMonitorFactory) {
-        this(clusterId, settings, serverFactory, dnsSrvRecordMonitorFactory, null);
-    }
 
     public DnsMultiServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
-                                 final DnsSrvRecordMonitorFactory dnsSrvRecordMonitorFactory, final Crypt crypt) {
-        super(clusterId, settings, serverFactory, crypt);
+                                 final DnsSrvRecordMonitorFactory dnsSrvRecordMonitorFactory) {
+        super(clusterId, settings, serverFactory);
         notNull("srvHost", settings.getSrvHost());
         dnsSrvRecordMonitor = dnsSrvRecordMonitorFactory.create(settings.getSrvHost(), new DnsSrvRecordInitializer() {
             private volatile boolean initialized;

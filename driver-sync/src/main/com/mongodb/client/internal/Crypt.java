@@ -12,12 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
-import com.mongodb.connection.Cluster;
 import org.bson.RawBsonDocument;
 
 import java.io.Closeable;
@@ -26,13 +24,6 @@ import java.io.Closeable;
  * This class is NOT part of the public API.
  */
 public interface Crypt extends Closeable {
-
-    /**
-     * Initialize with the cluster that this is providing encryption for.
-     *
-     * @param cluster the cluster
-     */
-    void init(Cluster cluster);
 
     /**
      * Encrypt the given command

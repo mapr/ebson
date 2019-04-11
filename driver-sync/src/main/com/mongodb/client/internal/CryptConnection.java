@@ -12,21 +12,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcernResult;
-import com.mongodb.async.SingleResultCallback;
 import com.mongodb.bulk.DeleteRequest;
 import com.mongodb.bulk.InsertRequest;
 import com.mongodb.bulk.UpdateRequest;
+import com.mongodb.connection.Connection;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.connection.QueryResult;
 import com.mongodb.connection.SplittablePayload;
+import com.mongodb.internal.connection.MessageSettings;
+import com.mongodb.internal.connection.SplittablePayloadBsonWriter;
 import com.mongodb.session.SessionContext;
 import org.bson.BsonBinaryReader;
 import org.bson.BsonBinaryWriter;
@@ -52,9 +53,9 @@ import java.util.Set;
 import static java.util.Arrays.asList;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 
+// because this class implements deprecated methods
 @SuppressWarnings("deprecation")
-        // because this class implements deprecated methods
-class CryptConnection implements SyncAsyncConnection {
+class CryptConnection implements Connection {
     private static final CodecRegistry REGISTRY = fromProviders(new BsonValueCodecProvider());
 
     private static final Set<String> ENCRYPTED_COMMANDS = new HashSet<String>(asList(
@@ -83,10 +84,10 @@ class CryptConnection implements SyncAsyncConnection {
             "group",
             "mapReduce"));
 
-    private final SyncAsyncConnection wrapped;
+    private final Connection wrapped;
     private final Crypt crypt;
 
-    CryptConnection(final SyncAsyncConnection wrapped, final Crypt crypt) {
+    CryptConnection(final Connection wrapped, final Crypt crypt) {
         this.wrapped = wrapped;
         this.crypt = crypt;
     }
@@ -161,26 +162,9 @@ class CryptConnection implements SyncAsyncConnection {
     }
 
     @Override
-    public <T> void commandAsync(final String database, final BsonDocument command, final FieldNameValidator commandFieldNameValidator,
-                                 final ReadPreference readPreference, final Decoder<T> commandResultDecoder,
-                                 final SessionContext sessionContext, final boolean responseExpected, final SplittablePayload payload,
-                                 final FieldNameValidator payloadFieldNameValidator, final SingleResultCallback<T> callback) {
-        // TODO: support async
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public <T> T command(final String database, final BsonDocument command, final FieldNameValidator fieldNameValidator,
                          final ReadPreference readPreference, final Decoder<T> commandResultDecoder, final SessionContext sessionContext) {
         return command(database, command, fieldNameValidator, readPreference, commandResultDecoder, sessionContext, true, null, null);
-    }
-
-    @Override
-    public <T> void commandAsync(final String database, final BsonDocument command, final FieldNameValidator fieldNameValidator,
-                                 final ReadPreference readPreference, final Decoder<T> commandResultDecoder,
-                                 final SessionContext sessionContext, final SingleResultCallback<T> callback) {
-        commandAsync(database, command, fieldNameValidator, readPreference, commandResultDecoder, sessionContext, true, null, null,
-                callback);
     }
 
     @SuppressWarnings("unchecked")
@@ -265,60 +249,4 @@ class CryptConnection implements SyncAsyncConnection {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public void insertAsync(final MongoNamespace namespace, final boolean ordered, final InsertRequest insertRequest,
-                            final SingleResultCallback<WriteConcernResult> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void updateAsync(final MongoNamespace namespace, final boolean ordered, final UpdateRequest updateRequest,
-                            final SingleResultCallback<WriteConcernResult> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void deleteAsync(final MongoNamespace namespace, final boolean ordered, final DeleteRequest deleteRequest,
-                            final SingleResultCallback<WriteConcernResult> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> void commandAsync(final String database, final BsonDocument command, final boolean slaveOk,
-                                 final FieldNameValidator fieldNameValidator, final Decoder<T> commandResultDecoder,
-                                 final SingleResultCallback<T> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> void queryAsync(final MongoNamespace namespace, final BsonDocument queryDocument, final BsonDocument fields,
-                               final int numberToReturn, final int skip, final boolean slaveOk, final boolean tailableCursor,
-                               final boolean awaitData, final boolean noCursorTimeout, final boolean partial, final boolean oplogReplay,
-                               final Decoder<T> resultDecoder, final SingleResultCallback<QueryResult<T>> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> void queryAsync(final MongoNamespace namespace, final BsonDocument queryDocument, final BsonDocument fields, final int skip,
-                               final int limit, final int batchSize, final boolean slaveOk, final boolean tailableCursor,
-                               final boolean awaitData, final boolean noCursorTimeout, final boolean partial, final boolean oplogReplay,
-                               final Decoder<T> resultDecoder, final SingleResultCallback<QueryResult<T>> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> void getMoreAsync(final MongoNamespace namespace, final long cursorId, final int numberToReturn,
-                                 final Decoder<T> resultDecoder, final SingleResultCallback<QueryResult<T>> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void killCursorAsync(final List<Long> cursors, final SingleResultCallback<Void> callback) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void killCursorAsync(final MongoNamespace namespace, final List<Long> cursors, final SingleResultCallback<Void> callback) {
-        throw new UnsupportedOperationException();
-    }
 }

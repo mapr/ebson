@@ -12,18 +12,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection
+package com.mongodb.client.internal
 
 import com.mongodb.ReadPreference
 import com.mongodb.ServerAddress
 import com.mongodb.connection.ClusterId
+import com.mongodb.connection.Connection
 import com.mongodb.connection.ConnectionDescription
 import com.mongodb.connection.ConnectionId
 import com.mongodb.connection.ServerId
 import com.mongodb.connection.SplittablePayload
+import com.mongodb.internal.connection.NoOpSessionContext
 import com.mongodb.internal.validator.NoOpFieldNameValidator
 import org.bson.BsonArray
 import org.bson.BsonBinary
@@ -50,7 +51,7 @@ class CryptConnectionSpecification extends Specification {
 
     def 'should encrypt and decrypt a command'() {
         given:
-        def wrappedConnection = Mock(SyncAsyncConnection)
+        def wrappedConnection = Mock(Connection)
         def crypt = Mock(Crypt)
         def cryptConnection = new CryptConnection(wrappedConnection, crypt)
         def codec = new DocumentCodec()
@@ -83,7 +84,7 @@ class CryptConnectionSpecification extends Specification {
             new ConnectionDescription(new ConnectionId(new ServerId(new ClusterId(), new ServerAddress())), 7, STANDALONE,
                     maxBatchCount, maxDocumentSize, maxMessageSize, [])
         }
-        1 * crypt.encrypt(toRaw(new BsonDocument('find', new BsonString('test'))
+        1 * crypt.encrypt('db', toRaw(new BsonDocument('find', new BsonString('test'))
                 .append('filter', new BsonDocument('ssid', new BsonString('555-55-5555'))))) >> {
              encryptedCommand
         }
@@ -99,7 +100,7 @@ class CryptConnectionSpecification extends Specification {
 
     def 'should encrypt and decrypt a command with a splittable payload'() {
         given:
-        def wrappedConnection = Mock(SyncAsyncConnection)
+        def wrappedConnection = Mock(Connection)
         def crypt = Mock(Crypt)
         def cryptConnection = new CryptConnection(wrappedConnection, crypt)
         def codec = new DocumentCodec()
@@ -133,8 +134,8 @@ class CryptConnectionSpecification extends Specification {
             new ConnectionDescription(new ConnectionId(new ServerId(new ClusterId(), new ServerAddress())), 7, STANDALONE,
                     maxBatchCount, maxDocumentSize, maxMessageSize, [])
         }
-        1 * crypt.encrypt(toRaw(new BsonDocument('insert', new BsonString('test')).append('documents', new BsonArray(
-                [
+        1 * crypt.encrypt('db', toRaw(new BsonDocument('insert', new BsonString('test')).append('documents',
+                new BsonArray([
                         new BsonDocument('_id', new BsonInt32(1))
                                 .append('ssid', new BsonString('555-55-5555'))
                                 .append('b', new BsonBinary(bytes))

@@ -17,6 +17,7 @@
 package com.mongodb.client;
 
 import com.mongodb.Block;
+import com.mongodb.KeyVaultOptions;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.ValidationAction;
@@ -40,7 +41,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.ClusterFixture.getConnectionString;
@@ -122,7 +125,8 @@ public class ClientSideEncryptionTest {
         }
 
         mongoClient = MongoClients.create(builder
-                .enableClientSideEncryption(true)
+                .keyVaultOptions(new KeyVaultOptions("admin.datakeys",
+                        Collections.<String, Map<String, Object>>emptyMap(), Collections.<String, Object>emptyMap()))
                 .addCommandListener(commandListener)
                 .applyToSocketSettings(new Block<SocketSettings.Builder>() {
                     @Override

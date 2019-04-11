@@ -70,9 +70,8 @@ public abstract class AbstractMultiServerCluster extends BaseCluster {
         }
     }
 
-    AbstractMultiServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory,
-                               final Crypt crypt) {
-        super(clusterId, settings, serverFactory, crypt);
+    AbstractMultiServerCluster(final ClusterId clusterId, final ClusterSettings settings, final ClusterableServerFactory serverFactory) {
+        super(clusterId, settings, serverFactory);
         isTrue("connection mode is multiple", settings.getMode() == ClusterConnectionMode.MULTIPLE);
         clusterType = settings.getRequiredClusterType();
         replicaSetName = settings.getRequiredReplicaSetName();

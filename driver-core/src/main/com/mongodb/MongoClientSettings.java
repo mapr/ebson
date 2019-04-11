@@ -87,7 +87,8 @@ public final class MongoClientSettings {
     private final String applicationName;
     private final List<MongoCompressor> compressorList;
 
-    private final boolean enableClientSideEncryption;
+    private final KeyVaultOptions keyVaultOptions;
+    private final MongoClientSettings keyVaultClientSettings;
 
     /**
      * Gets the default codec registry.  It includes the following providers:
@@ -154,8 +155,8 @@ public final class MongoClientSettings {
         private String applicationName;
         private List<MongoCompressor> compressorList = Collections.emptyList();
 
-        // TODO: expand this
-        private boolean enableClientSideEncryption;
+        private KeyVaultOptions keyVaultOptions;
+        private MongoClientSettings keyVaultClientSettings;
 
         private Builder() {
         }
@@ -420,13 +421,26 @@ public final class MongoClientSettings {
         }
 
         /**
-         * Sets whether client side encryption is enabled
+         * Sets the key vault options.
          *
-         * @param enableClientSideEncryption enabled or not
+         * @param keyVaultOptions key vault options
          * @return this
+         * @since 3.11
          */
-        public Builder enableClientSideEncryption(final boolean enableClientSideEncryption) {
-            this.enableClientSideEncryption = enableClientSideEncryption;
+        public Builder keyVaultOptions(final KeyVaultOptions keyVaultOptions) {
+            this.keyVaultOptions = keyVaultOptions;
+            return this;
+        }
+
+        /**
+         * Sets the key vault.
+         *
+         * @param keyVaultClientSettings key vault settings
+         * @return this
+         * @since 3.11
+         */
+        public Builder keyVaultClientSettings(final MongoClientSettings keyVaultClientSettings) {
+            this.keyVaultClientSettings = keyVaultClientSettings;
             return this;
         }
 
@@ -555,12 +569,25 @@ public final class MongoClientSettings {
     }
 
     /**
-     * Gets whether client side encryption is enabled
+     * Gets the key vault options
      *
-     * @return whether it's enabled
+     * @return the key value options, which may be null
+     * @since 3.11
      */
-    public boolean isEnableClientSideEncryption() {
-        return enableClientSideEncryption;
+    @Nullable
+    public KeyVaultOptions getKeyVaultOptions() {
+        return keyVaultOptions;
+    }
+
+    /**
+     * Gets the key vault client settins
+     *
+     * @return the settings for the key vault, which may be null
+     * @since 3.11
+     */
+    @Nullable
+    public MongoClientSettings getKeyVaultClientSettings() {
+        return keyVaultClientSettings;
     }
 
     /**
@@ -643,7 +670,8 @@ public final class MongoClientSettings {
         connectionPoolSettings = builder.connectionPoolSettingsBuilder.build();
         sslSettings = builder.sslSettingsBuilder.build();
         compressorList = builder.compressorList;
-        enableClientSideEncryption = builder.enableClientSideEncryption;
+        keyVaultOptions = builder.keyVaultOptions;
+        keyVaultClientSettings = builder.keyVaultClientSettings;
 
         SocketSettings.Builder heartbeatSocketSettingsBuilder = SocketSettings.builder()
                 .readTimeout(socketSettings.getConnectTimeout(MILLISECONDS), MILLISECONDS)

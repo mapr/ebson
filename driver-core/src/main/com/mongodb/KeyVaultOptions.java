@@ -12,18 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb;
 
-import com.mongodb.connection.Cluster;
-import org.bson.BsonDocument;
+import java.util.Map;
 
-import java.util.Iterator;
+public class KeyVaultOptions {
+    private final String keyVaultNamespace;
+    private final Map<String, Map<String, Object>> kmsProviders;
+    private final Map<String, Object> extraOptions;
 
-public interface KeyVault {
-    Iterator<BsonDocument> find(BsonDocument keyFilter);
-
-    void init(Cluster cluster);
+    public KeyVaultOptions(final String keyVaultNamespace, final Map<String, Map<String, Object>> kmsProviders,
+                           final Map<String, Object> extraOptions) {
+        this.keyVaultNamespace = keyVaultNamespace;
+        this.kmsProviders = kmsProviders;
+        this.extraOptions = extraOptions;
+    }
 }

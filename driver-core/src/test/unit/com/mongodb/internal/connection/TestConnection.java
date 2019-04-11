@@ -23,6 +23,8 @@ import com.mongodb.async.SingleResultCallback;
 import com.mongodb.bulk.DeleteRequest;
 import com.mongodb.bulk.InsertRequest;
 import com.mongodb.bulk.UpdateRequest;
+import com.mongodb.connection.AsyncConnection;
+import com.mongodb.connection.Connection;
 import com.mongodb.connection.ConnectionDescription;
 import com.mongodb.connection.QueryResult;
 import com.mongodb.connection.SplittablePayload;
@@ -34,7 +36,7 @@ import org.bson.codecs.Decoder;
 import java.util.List;
 
 @SuppressWarnings({"rawtypes", "unchecked", "deprecation"})
-class TestConnection implements SyncAsyncConnection {
+class TestConnection implements Connection, AsyncConnection {
     private final InternalConnection internalConnection;
     private final ProtocolExecutor executor;
     private LegacyProtocol enqueuedLegacyProtocol;

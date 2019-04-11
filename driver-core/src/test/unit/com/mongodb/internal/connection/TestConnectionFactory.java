@@ -16,12 +16,20 @@
 
 package com.mongodb.internal.connection;
 
+import com.mongodb.connection.AsyncConnection;
 import com.mongodb.connection.ClusterConnectionMode;
+import com.mongodb.connection.Connection;
 
 class TestConnectionFactory implements ConnectionFactory {
     @Override
-    public SyncAsyncConnection create(final InternalConnection internalConnection, final ProtocolExecutor executor,
+    public Connection create(final InternalConnection internalConnection, final ProtocolExecutor executor,
                              final ClusterConnectionMode clusterConnectionMode) {
+        return new TestConnection(internalConnection, executor);
+    }
+
+    @Override
+    public AsyncConnection createAsync(final InternalConnection internalConnection, final ProtocolExecutor executor,
+                                       final ClusterConnectionMode clusterConnectionMode) {
         return new TestConnection(internalConnection, executor);
     }
 }

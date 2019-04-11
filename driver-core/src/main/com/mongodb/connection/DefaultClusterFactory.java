@@ -16,37 +16,22 @@
 
 package com.mongodb.connection;
 
-import com.mongodb.MongoClientException;
 import com.mongodb.MongoCompressor;
 import com.mongodb.MongoCredential;
 import com.mongodb.MongoDriverInformation;
-import com.mongodb.MongoNamespace;
-import com.mongodb.ServerAddress;
-import com.mongodb.UnixServerAddress;
-import com.mongodb.crypt.capi.MongoCryptOptions;
-import com.mongodb.crypt.capi.MongoCrypts;
 import com.mongodb.event.ClusterListener;
 import com.mongodb.event.CommandListener;
 import com.mongodb.event.ConnectionPoolListener;
 import com.mongodb.internal.connection.ClusterableServerFactory;
-import com.mongodb.internal.connection.CollectionInfoRetrieverImpl;
-import com.mongodb.internal.connection.CommandMarkerImpl;
-import com.mongodb.internal.connection.Crypt;
-import com.mongodb.internal.connection.CryptImpl;
 import com.mongodb.internal.connection.DefaultClusterableServerFactory;
 import com.mongodb.internal.connection.DefaultDnsSrvRecordMonitorFactory;
 import com.mongodb.internal.connection.DnsMultiServerCluster;
 import com.mongodb.internal.connection.DnsSrvRecordMonitorFactory;
-import com.mongodb.internal.connection.KeyManagementServiceImpl;
-import com.mongodb.internal.connection.KeyVaultImpl;
 import com.mongodb.internal.connection.MultiServerCluster;
 import com.mongodb.internal.connection.SingleServerCluster;
 
-import javax.net.ssl.SSLContext;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The default factory for cluster implementations.
@@ -68,7 +53,7 @@ public final class DefaultClusterFactory implements ClusterFactory {
         return createCluster(getClusterSettings(settings, clusterListener), serverSettings,
                 getConnectionPoolSettings(connectionPoolSettings, connectionPoolListener), streamFactory,
                 heartbeatStreamFactory, credentialList, null, null, null,
-                Collections.<MongoCompressor>emptyList(), false);
+                Collections.<MongoCompressor>emptyList());
     }
 
     /**
@@ -85,9 +70,10 @@ public final class DefaultClusterFactory implements ClusterFactory {
      * @param connectionListener     an optional listener for connection-related events
      * @param commandListener        an optional listener for command-related events
      * @return the cluster
+     *
      * @since 3.1
      * @deprecated use {@link #createCluster(ClusterSettings, ServerSettings, ConnectionPoolSettings, StreamFactory, StreamFactory,
-     * List, CommandListener, String, MongoDriverInformation, List, boolean)} instead
+     * List, CommandListener, String, MongoDriverInformation, List)} instead
      */
     @Deprecated
     public Cluster create(final ClusterSettings settings, final ServerSettings serverSettings,
@@ -100,7 +86,7 @@ public final class DefaultClusterFactory implements ClusterFactory {
                           final CommandListener commandListener) {
         return createCluster(getClusterSettings(settings, clusterListener), serverSettings,
                 getConnectionPoolSettings(connectionPoolSettings, connectionPoolListener), streamFactory, heartbeatStreamFactory,
-                credentialList, commandListener, null, null, Collections.<MongoCompressor>emptyList(), false);
+                credentialList, commandListener, null, null, Collections.<MongoCompressor>emptyList());
     }
 
     /**
@@ -119,9 +105,10 @@ public final class DefaultClusterFactory implements ClusterFactory {
      * @param applicationName        an optional application name to associate with connections to the servers in this cluster
      * @param mongoDriverInformation the optional driver information associate with connections to the servers in this cluster
      * @return the cluster
+     *
      * @since 3.4
      * @deprecated use {@link #createCluster(ClusterSettings, ServerSettings, ConnectionPoolSettings, StreamFactory, StreamFactory,
-     * List, CommandListener, String, MongoDriverInformation, List, boolean)} instead
+     * List, CommandListener, String, MongoDriverInformation, List)} instead
      */
     @Deprecated
     public Cluster create(final ClusterSettings settings, final ServerSettings serverSettings,
@@ -136,7 +123,7 @@ public final class DefaultClusterFactory implements ClusterFactory {
                           final MongoDriverInformation mongoDriverInformation) {
         return createCluster(getClusterSettings(settings, clusterListener), serverSettings,
                 getConnectionPoolSettings(connectionPoolSettings, connectionPoolListener), streamFactory, heartbeatStreamFactory,
-                credentialList, commandListener, applicationName, mongoDriverInformation, Collections.<MongoCompressor>emptyList(), false);
+                credentialList, commandListener, applicationName, mongoDriverInformation, Collections.<MongoCompressor>emptyList());
     }
 
     /**
@@ -152,9 +139,11 @@ public final class DefaultClusterFactory implements ClusterFactory {
      * @param applicationName        an optional application name to associate with connections to the servers in this cluster
      * @param mongoDriverInformation the optional driver information associate with connections to the servers in this cluster
      * @return the cluster
+     *
      * @since 3.5
      * @deprecated use {@link #createCluster(ClusterSettings, ServerSettings, ConnectionPoolSettings, StreamFactory, StreamFactory,
-     * List, CommandListener, String, MongoDriverInformation, List, boolean)} instead
+     * List, CommandListener, String, MongoDriverInformation, List)} instead
+
      */
     @Deprecated
     public Cluster createCluster(final ClusterSettings clusterSettings, final ServerSettings serverSettings,
@@ -163,7 +152,7 @@ public final class DefaultClusterFactory implements ClusterFactory {
                                  final CommandListener commandListener, final String applicationName,
                                  final MongoDriverInformation mongoDriverInformation) {
         return createCluster(clusterSettings, serverSettings, connectionPoolSettings, streamFactory, heartbeatStreamFactory, credentialList,
-                commandListener, applicationName, mongoDriverInformation, Collections.<MongoCompressor>emptyList(), false);
+                commandListener, applicationName, mongoDriverInformation, Collections.<MongoCompressor>emptyList());
     }
 
     /**
@@ -180,6 +169,7 @@ public final class DefaultClusterFactory implements ClusterFactory {
      * @param mongoDriverInformation the optional driver information associate with connections to the servers in this cluster
      * @param compressorList         the list of compressors to request, in priority order
      * @return the cluster
+     *
      * @since 3.6
      */
     public Cluster createCluster(final ClusterSettings clusterSettings, final ServerSettings serverSettings,
@@ -187,8 +177,7 @@ public final class DefaultClusterFactory implements ClusterFactory {
                                  final StreamFactory heartbeatStreamFactory, final List<MongoCredential> credentialList,
                                  final CommandListener commandListener, final String applicationName,
                                  final MongoDriverInformation mongoDriverInformation,
-                                 final List<MongoCompressor> compressorList,
-                                 final boolean isEncryptionEnabled) {
+                                 final List<MongoCompressor> compressorList) {
 
         ClusterId clusterId = new ClusterId(clusterSettings.getDescription());
 
@@ -199,15 +188,13 @@ public final class DefaultClusterFactory implements ClusterFactory {
 
         DnsSrvRecordMonitorFactory dnsSrvRecordMonitorFactory = new DefaultDnsSrvRecordMonitorFactory(clusterId, serverSettings);
 
-        Crypt crypt = createCrypt(isEncryptionEnabled);
-
         if (clusterSettings.getMode() == ClusterConnectionMode.SINGLE) {
-            return new SingleServerCluster(clusterId, clusterSettings, serverFactory, crypt);
+            return new SingleServerCluster(clusterId, clusterSettings, serverFactory);
         } else if (clusterSettings.getMode() == ClusterConnectionMode.MULTIPLE) {
             if (clusterSettings.getSrvHost() == null) {
-                return new MultiServerCluster(clusterId, clusterSettings, serverFactory, crypt);
+                return new MultiServerCluster(clusterId, clusterSettings, serverFactory);
             } else {
-                return new DnsMultiServerCluster(clusterId, clusterSettings, serverFactory, dnsSrvRecordMonitorFactory, crypt);
+                return new DnsMultiServerCluster(clusterId, clusterSettings, serverFactory, dnsSrvRecordMonitorFactory);
             }
         } else {
             throw new UnsupportedOperationException("Unsupported cluster mode: " + clusterSettings.getMode());
@@ -221,47 +208,5 @@ public final class DefaultClusterFactory implements ClusterFactory {
     private ConnectionPoolSettings getConnectionPoolSettings(final ConnectionPoolSettings connPoolSettings,
                                                              final ConnectionPoolListener connPoolListener) {
         return ConnectionPoolSettings.builder(connPoolSettings).addConnectionPoolListener(connPoolListener).build();
-    }
-
-    private Crypt createCrypt(final boolean isEncryptionEnabled) {
-        if (!isEncryptionEnabled) {
-            return null;
-        }
-        // TODO: configure Crypt properly
-        ClusterId clusterId = new ClusterId();
-
-        ClusterSettings clusterSettings = ClusterSettings.builder()
-                // TODO: not portable
-                .hosts(Collections.<ServerAddress>singletonList(new UnixServerAddress("/tmp/mongocryptd.sock")))
-                .serverSelectionTimeout(1, TimeUnit.SECONDS)
-                .build();
-        // TODO: share this and close it
-        SingleServerCluster mongoCryptdCluster = new SingleServerCluster(clusterId,
-                clusterSettings,
-                new DefaultClusterableServerFactory(clusterId, clusterSettings,
-                        ServerSettings.builder().build(),
-                        ConnectionPoolSettings.builder().build(),
-                        new SocketStreamFactory(SocketSettings.builder().build(), SslSettings.builder().build()),
-                        new SocketStreamFactory(SocketSettings.builder().build(), SslSettings.builder().build()),
-                        Collections.<MongoCredential>emptyList(),
-                        null, null, null,
-                        Collections.<MongoCompressor>emptyList()), null);
-
-        try {
-            return new CryptImpl(
-                    MongoCrypts.create(
-                            MongoCryptOptions.builder()
-                                    .accessKeyId(System.getProperty("awsAccessKey"))
-                                    .secretAccessKey(System.getProperty("awsSecretAccessKey"))
-                                    .build()),
-                    new CollectionInfoRetrieverImpl(),
-                    new CommandMarkerImpl(mongoCryptdCluster, "mongocryptd"),
-                    new KeyVaultImpl(new MongoNamespace("admin.datakeys")),
-                    new KeyManagementServiceImpl(SSLContext.getDefault(), 443, 10000));
-
-        } catch (NoSuchAlgorithmException e) {
-            throw new MongoClientException("Unable to create default SSLContext", e);
-        }
-
     }
 }

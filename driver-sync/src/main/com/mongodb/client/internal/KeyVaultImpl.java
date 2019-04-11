@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package com.mongodb.internal.connection;
+package com.mongodb.client.internal;
 
-import com.mongodb.connection.AsyncConnection;
-import com.mongodb.connection.ClusterConnectionMode;
-import com.mongodb.connection.Connection;
+import com.mongodb.client.MongoCollection;
+import org.bson.BsonDocument;
 
-interface ConnectionFactory {
-    Connection create(InternalConnection internalConnection, ProtocolExecutor executor, ClusterConnectionMode clusterConnectionMode);
+import java.util.ArrayList;
+import java.util.Iterator;
 
-    AsyncConnection createAsync(InternalConnection internalConnection, ProtocolExecutor executor,
-                                ClusterConnectionMode clusterConnectionMode);
+class KeyVaultImpl implements KeyVault {
+    private final MongoCollection<BsonDocument> collection;
+
+    KeyVaultImpl(final MongoCollection<BsonDocument> collection) {
+        this.collection = collection;
+    }
+    @Override
+    public Iterator<BsonDocument> find(final BsonDocument keyFilter) {
+        return collection.find(keyFilter).into(new ArrayList<BsonDocument>()).iterator();
+    }
 }

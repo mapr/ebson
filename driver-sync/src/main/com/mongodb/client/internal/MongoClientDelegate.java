@@ -63,11 +63,14 @@ public class MongoClientDelegate {
     private final List<MongoCredential> credentialList;
     private final Object originator;
     private final OperationExecutor operationExecutor;
+    private Crypt crypt;
 
+    // TODO: remove
     public MongoClientDelegate(final Cluster cluster, final List<MongoCredential> credentialList, final Object originator) {
         this(cluster, credentialList, originator, null);
     }
 
+    // TODO: remove
     public MongoClientDelegate(final Cluster cluster, final List<MongoCredential> credentialList, final Object originator,
                                @Nullable final OperationExecutor operationExecutor) {
         this.cluster = cluster;
@@ -75,6 +78,10 @@ public class MongoClientDelegate {
         this.credentialList = credentialList;
         this.originator = originator;
         this.operationExecutor = operationExecutor == null ? new DelegateOperationExecutor() : operationExecutor;
+    }
+
+    void init(@Nullable final Crypt crypt) {
+        this.crypt = crypt;
     }
 
     public OperationExecutor getOperationExecutor() {
@@ -218,6 +225,9 @@ public class MongoClientDelegate {
                                              @Nullable final ClientSession session, final boolean ownsSession) {
             ReadWriteBinding readWriteBinding = new ClusterBinding(cluster, getReadPreferenceForBinding(readPreference, session),
                     readConcern);
+            if (crypt != null) {
+                readWriteBinding = new CryptBinding(readWriteBinding, crypt);
+            }
             if (session != null) {
                 readWriteBinding = new ClientSessionBinding(session, ownsSession, readWriteBinding);
             }
