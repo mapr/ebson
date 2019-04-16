@@ -16,8 +16,9 @@
 
 package com.mongodb.client;
 
+import com.mongodb.AutoEncryptOptions;
 import com.mongodb.Block;
-import com.mongodb.KeyVaultOptions;
+import com.mongodb.ClientSideEncryptionOptions;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.ValidationAction;
@@ -27,6 +28,7 @@ import com.mongodb.connection.SslSettings;
 import com.mongodb.event.CommandEvent;
 import com.mongodb.internal.connection.TestCommandListener;
 import org.bson.BsonArray;
+import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonValue;
 import org.junit.After;
@@ -42,11 +44,13 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.ClusterFixture.getConnectionString;
+import static com.mongodb.client.CommandMonitoringTestHelper.assertEventsEquality;
 import static com.mongodb.client.CommandMonitoringTestHelper.getExpectedEvents;
 import static com.mongodb.client.Fixture.getMongoClient;
 import static org.junit.Assert.assertEquals;
@@ -124,9 +128,22 @@ public class ClientSideEncryptionTest {
             });
         }
 
+        BsonDocument clientOptions = definition.getDocument("clientOptions");
+        BsonDocument cryptOptions = clientOptions.getDocument("clientSideEncryptionOptions");
+        BsonDocument autoEncryptMapDocument = cryptOptions.getDocument("autoEncryptMap");
+
+        Map<String, AutoEncryptOptions> namespaceToSchemaMap = new HashMap<String, AutoEncryptOptions>();
+
+        for (Map.Entry<String, BsonValue> entries : autoEncryptMapDocument.entrySet()) {
+            final BsonDocument autoEncryptOptionsDocument = entries.getValue().asDocument();
+            namespaceToSchemaMap.put(entries.getKey(),
+                    new AutoEncryptOptions(autoEncryptMapDocument.getBoolean("enabled", BsonBoolean.TRUE).getValue(),
+                            autoEncryptOptionsDocument.getDocument("schema", null)));
+        }
+
         mongoClient = MongoClients.create(builder
-                .keyVaultOptions(new KeyVaultOptions("admin.datakeys",
-                        Collections.<String, Map<String, Object>>emptyMap(), Collections.<String, Object>emptyMap()))
+                .clientSideEncryptionOptions(new ClientSideEncryptionOptions(null, "admin.datakeys",
+                        Collections.<String, Map<String, Object>>emptyMap(), namespaceToSchemaMap, Collections.<String, Object>emptyMap()))
                 .addCommandListener(commandListener)
                 .applyToSocketSettings(new Block<SocketSettings.Builder>() {
                     @Override
@@ -167,9 +184,9 @@ public class ClientSideEncryptionTest {
 //                System.out.println(((CommandStartedEvent) event).getCommand().toJson(JsonWriterSettings.builder().indent(true).build()));
 //                System.out.println();
 //            }
-
+//
             // TODO: these don't match
-//            assertEventsEquality(expectedEvents, events);
+            assertEventsEquality(expectedEvents, events);
         }
 
     }

@@ -16,6 +16,7 @@
 
 package com.mongodb.client.internal;
 
+import com.mongodb.MongoClientException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcernResult;
@@ -33,6 +34,7 @@ import org.bson.BsonBinaryReader;
 import org.bson.BsonBinaryWriter;
 import org.bson.BsonBinaryWriterSettings;
 import org.bson.BsonDocument;
+import org.bson.BsonValue;
 import org.bson.BsonWriter;
 import org.bson.BsonWriterSettings;
 import org.bson.FieldNameValidator;
@@ -122,7 +124,7 @@ class CryptConnection implements Connection {
         // TODO: This is not always efficient, e.g. when it's a BsonDocumentWrapper.  Consider just turning everyting to raw first
         String commandName = command.getFirstKey();
 
-        if (!ENCRYPTED_COMMANDS.contains(commandName)) {
+        if (!ENCRYPTED_COMMANDS.contains(commandName) || !crypt.isEnabled(getNamespace(database, command, commandName))) {
             return wrapped.command(database, command, commandFieldNameValidator, readPreference, commandResultDecoder, sessionContext,
                     responseExpected, payload, payloadFieldNameValidator);
         }
@@ -143,9 +145,9 @@ class CryptConnection implements Connection {
 
         RawBsonDocument unencryptedCommand = new RawBsonDocument(bsonOutput.getInternalBuffer(), 0, bsonOutput.getSize());
 
-        BsonDocument encryptedCommand = crypt.encrypt(database, unencryptedCommand);
+        BsonDocument encryptedCommand = crypt.encrypt(getNamespace(database, command, commandName), unencryptedCommand);
 
-
+        // TODO: are there cases when the command isn't encrypted but the response still needs to be decrypted?
         if (!DECRYPTED_RESPONSES.contains(commandName)) {
             return wrapped.command(database, encryptedCommand, commandFieldNameValidator, readPreference, commandResultDecoder,
                     sessionContext, responseExpected, null, null);
@@ -153,12 +155,20 @@ class CryptConnection implements Connection {
             RawBsonDocument encryptedResponse = wrapped.command(database, encryptedCommand, commandFieldNameValidator, readPreference,
                     new RawBsonDocumentCodec(), sessionContext, responseExpected, null, null);
 
-            RawBsonDocument decryptedResponse = crypt.decrypt(encryptedResponse);
+            RawBsonDocument decryptedResponse = crypt.decrypt(getNamespace(database, command, commandName), encryptedResponse);
 
             BsonBinaryReader reader = new BsonBinaryReader(decryptedResponse.getByteBuffer().asNIO());
 
             return commandResultDecoder.decode(reader, DecoderContext.builder().build());
         }
+    }
+
+    private MongoNamespace getNamespace(final String database, final BsonDocument command, final String commandName) {
+        BsonValue collectionNameValue = command.get(commandName);
+        if (!collectionNameValue.isString()) {
+            throw new MongoClientException("Expected collection name as the command value");
+        }
+        return new MongoNamespace(database, collectionNameValue.asString().getValue());
     }
 
     @Override

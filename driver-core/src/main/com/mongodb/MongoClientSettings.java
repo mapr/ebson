@@ -87,8 +87,7 @@ public final class MongoClientSettings {
     private final String applicationName;
     private final List<MongoCompressor> compressorList;
 
-    private final KeyVaultOptions keyVaultOptions;
-    private final MongoClientSettings keyVaultClientSettings;
+    private final ClientSideEncryptionOptions clientSideEncryptionOptions;
 
     /**
      * Gets the default codec registry.  It includes the following providers:
@@ -155,8 +154,7 @@ public final class MongoClientSettings {
         private String applicationName;
         private List<MongoCompressor> compressorList = Collections.emptyList();
 
-        private KeyVaultOptions keyVaultOptions;
-        private MongoClientSettings keyVaultClientSettings;
+        private ClientSideEncryptionOptions clientSideEncryptionOptions;
 
         private Builder() {
         }
@@ -423,24 +421,12 @@ public final class MongoClientSettings {
         /**
          * Sets the key vault options.
          *
-         * @param keyVaultOptions key vault options
+         * @param clientSideEncryptionOptions key vault options
          * @return this
          * @since 3.11
          */
-        public Builder keyVaultOptions(final KeyVaultOptions keyVaultOptions) {
-            this.keyVaultOptions = keyVaultOptions;
-            return this;
-        }
-
-        /**
-         * Sets the key vault.
-         *
-         * @param keyVaultClientSettings key vault settings
-         * @return this
-         * @since 3.11
-         */
-        public Builder keyVaultClientSettings(final MongoClientSettings keyVaultClientSettings) {
-            this.keyVaultClientSettings = keyVaultClientSettings;
+        public Builder clientSideEncryptionOptions(final ClientSideEncryptionOptions clientSideEncryptionOptions) {
+            this.clientSideEncryptionOptions = clientSideEncryptionOptions;
             return this;
         }
 
@@ -575,19 +561,8 @@ public final class MongoClientSettings {
      * @since 3.11
      */
     @Nullable
-    public KeyVaultOptions getKeyVaultOptions() {
-        return keyVaultOptions;
-    }
-
-    /**
-     * Gets the key vault client settins
-     *
-     * @return the settings for the key vault, which may be null
-     * @since 3.11
-     */
-    @Nullable
-    public MongoClientSettings getKeyVaultClientSettings() {
-        return keyVaultClientSettings;
+    public ClientSideEncryptionOptions getClientSideEncryptionOptions() {
+        return clientSideEncryptionOptions;
     }
 
     /**
@@ -670,8 +645,7 @@ public final class MongoClientSettings {
         connectionPoolSettings = builder.connectionPoolSettingsBuilder.build();
         sslSettings = builder.sslSettingsBuilder.build();
         compressorList = builder.compressorList;
-        keyVaultOptions = builder.keyVaultOptions;
-        keyVaultClientSettings = builder.keyVaultClientSettings;
+        clientSideEncryptionOptions = builder.clientSideEncryptionOptions;
 
         SocketSettings.Builder heartbeatSocketSettingsBuilder = SocketSettings.builder()
                 .readTimeout(socketSettings.getConnectTimeout(MILLISECONDS), MILLISECONDS)

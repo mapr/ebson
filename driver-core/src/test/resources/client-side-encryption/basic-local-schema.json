@@ -79,7 +79,31 @@
           "kmsProvider": "aws-kms",
           "autoEncryptMap": {
             "default.default": {
-              enabled: true
+              "schema": {
+                "properties": {
+                  "ssn": {
+                    "encrypt": {
+                      "keyId": [
+                        {
+                          "$binary": {
+                            "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                            "subType": "04"
+                          }
+                        }
+                      ],
+                      "bsonType": "string",
+                      "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic",
+                      "initializationVector": {
+                        "$binary": {
+                          "base64": "aWlpaWlpaWlpaWlpaWlpaQ==",
+                          "subType": "00"
+                        }
+                      }
+                    }
+                  }
+                },
+                "bsonType": "object"
+              }
             }
           }
         }
@@ -112,6 +136,27 @@
       "expectations": [
         {
           "command_started_event": {
+            "database_name"
+            "command_name": "find",
+            "command": {
+              "find": "datakeys",
+              "filter": {
+                "_id": {
+                  "$in": [
+                    {
+                      "$binary": {
+                        "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                        "subType": "04"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "command_started_event": {
             "command": {
               "insert": "default",
               "documents": [
@@ -137,6 +182,26 @@
               }
             },
             "command_name": "find"
+          }
+        },
+        {
+          "command_started_event": {
+            "command_name": "find",
+            "command": {
+              "find": "datakeys",
+              "filter": {
+                "_id": {
+                  "$in": [
+                    {
+                      "$binary": {
+                        "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                        "subType": "04"
+                      }
+                    }
+                  ]
+                }
+              },
+            }
           }
         }
       ]

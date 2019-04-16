@@ -230,7 +230,7 @@ public final class MongoClientImpl implements MongoClient {
 
     @Nullable
     private Crypt createCrypt(final MongoClientSettings settings) {
-        if (settings.getKeyVaultOptions() == null) {
+        if (settings.getClientSideEncryptionOptions() == null) {
             return null;
         }
 
@@ -240,6 +240,7 @@ public final class MongoClientImpl implements MongoClient {
                 MongoClients.create("mongodb://%2Ftmp%2Fmongocryptd.sock/?serverSelectionTimeoutMS=1000");
         try {
             return new CryptImpl(
+                    settings.getClientSideEncryptionOptions(),
                     MongoCrypts.create(
                             MongoCryptOptions.builder()
                                     .accessKeyId(System.getProperty("awsAccessKey"))

@@ -16,17 +16,26 @@
 
 package com.mongodb;
 
-import java.util.Map;
+import org.bson.BsonDocument;
 
-public class KeyVaultOptions {
-    private final String keyVaultNamespace;
-    private final Map<String, Map<String, Object>> kmsProviders;
-    private final Map<String, Object> extraOptions;
+/**
+ *
+ * @since 3.11
+ */
+public class AutoEncryptOptions {
+    private final boolean enabled;
+    private final BsonDocument localSchemaDocument;
 
-    public KeyVaultOptions(final String keyVaultNamespace, final Map<String, Map<String, Object>> kmsProviders,
-                           final Map<String, Object> extraOptions) {
-        this.keyVaultNamespace = keyVaultNamespace;
-        this.kmsProviders = kmsProviders;
-        this.extraOptions = extraOptions;
+    public AutoEncryptOptions(final boolean enabled, final BsonDocument localSchemaDocument) {
+        this.enabled = enabled;
+        this.localSchemaDocument = localSchemaDocument;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public BsonDocument getLocalSchemaDocument() {
+        return localSchemaDocument;
     }
 }

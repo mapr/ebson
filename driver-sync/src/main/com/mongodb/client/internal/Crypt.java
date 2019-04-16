@@ -16,6 +16,7 @@
 
 package com.mongodb.client.internal;
 
+import com.mongodb.MongoNamespace;
 import org.bson.RawBsonDocument;
 
 import java.io.Closeable;
@@ -26,21 +27,29 @@ import java.io.Closeable;
 public interface Crypt extends Closeable {
 
     /**
+     * Whether the namespace should be auto-encrypted or auto-decrypted
+     * @param namespace the namespace
+     * @return true if the namespace should be auto-encrypted or auto-decrypted
+     */
+    boolean isEnabled(MongoNamespace namespace);
+
+    /**
      * Encrypt the given command
      *
-     * @param databaseName the database name
-     * @param command      the uncrypted command
+     * @param namespace the namespace
+     * @param command      the unencrypted command
      * @return the encyrpted command
      */
-    RawBsonDocument encrypt(String databaseName, RawBsonDocument command);
+    RawBsonDocument encrypt(MongoNamespace namespace, RawBsonDocument command);
 
     /**
      * Decrypt the given command response
      *
+     * @param namespace the namespace
      * @param commandResponse the encrypted command response
      * @return the decrypted command response
      */
-    RawBsonDocument decrypt(RawBsonDocument commandResponse);
+    RawBsonDocument decrypt(MongoNamespace namespace, RawBsonDocument commandResponse);
 
     @Override
     public void close();

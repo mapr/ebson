@@ -16,6 +16,8 @@
 
 package com.mongodb.client.internal;
 
+import com.mongodb.AutoEncryptOptions;
+import com.mongodb.ClientSideEncryptionOptions;
 import com.mongodb.MongoException;
 import com.mongodb.MongoInternalException;
 import com.mongodb.MongoNamespace;
@@ -33,19 +35,23 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 
+import static com.mongodb.assertions.Assertions.isTrue;
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.crypt.capi.MongoCryptContext.State;
 
-public class CryptImpl implements Crypt {
+class CryptImpl implements Crypt {
 
+    private final ClientSideEncryptionOptions options;
     private final MongoCrypt mongoCrypt;
     private final CollectionInfoRetriever collectionInfoRetriever;
     private final CommandMarker commandMarker;
     private final KeyVault keyVault;
     private final KeyManagementService keyManagementService;
 
-    public CryptImpl(final MongoCrypt mongoCrypt, final CollectionInfoRetriever collectionInfoRetriever, final CommandMarker commandMarker,
-                     final KeyVault keyVault, final KeyManagementService keyManagementService) {
+    CryptImpl(final ClientSideEncryptionOptions options, final MongoCrypt mongoCrypt,
+              final CollectionInfoRetriever collectionInfoRetriever, final CommandMarker commandMarker,
+              final KeyVault keyVault, final KeyManagementService keyManagementService) {
+        this.options = options;
         this.mongoCrypt = mongoCrypt;
         this.collectionInfoRetriever = collectionInfoRetriever;
         this.commandMarker = commandMarker;
@@ -54,15 +60,24 @@ public class CryptImpl implements Crypt {
     }
 
     @Override
-    public RawBsonDocument encrypt(final String databaseName, final RawBsonDocument command) {
-        notNull("databaseName", databaseName);
-        notNull("command", command);
+    public boolean isEnabled(final MongoNamespace namespace) {
+        AutoEncryptOptions autoEncryptOptions = options.getNamespaceToAutoEncryptOptionsMap().get(namespace.getFullName());
+        return autoEncryptOptions != null && autoEncryptOptions.isEnabled();
+    }
 
-        MongoNamespace namespace = getNamespace(databaseName, command);
-        MongoCryptContext encryptionContext = mongoCrypt.createEncryptionContext(namespace.getFullName());
+    @Override
+    public RawBsonDocument encrypt(final MongoNamespace namespace, final RawBsonDocument command) {
+        notNull("databaseName", namespace);
+        notNull("command", command);
+        isTrue("encryption enabled", isEnabled(namespace));
+
+        AutoEncryptOptions autoEncryptOptions = options.getNamespaceToAutoEncryptOptionsMap().get(namespace.getFullName());
+
+        MongoCryptContext encryptionContext = mongoCrypt.createEncryptionContext(namespace.getFullName(),
+                autoEncryptOptions.getLocalSchemaDocument());
 
         try {
-            RawBsonDocument encryptedDocument = executeStateMachine(encryptionContext, databaseName, command);
+            RawBsonDocument encryptedDocument = executeStateMachine(encryptionContext, namespace.getDatabaseName(), command);
 
             // TODO: hopefully remove this
             BsonDocument clonedDocument = new BsonDocumentCodec()
@@ -77,8 +92,9 @@ public class CryptImpl implements Crypt {
     }
 
     @Override
-    public RawBsonDocument decrypt(final RawBsonDocument commandResponse) {
+    public RawBsonDocument decrypt(final MongoNamespace namespace, final RawBsonDocument commandResponse) {
         notNull("commandResponse", commandResponse);
+        isTrue("decryption enabled", isEnabled(namespace));
 
         MongoCryptContext decryptionContext = mongoCrypt.createDecryptionContext(commandResponse);
 
