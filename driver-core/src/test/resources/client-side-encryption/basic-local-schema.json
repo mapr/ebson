@@ -136,7 +136,6 @@
       "expectations": [
         {
           "command_started_event": {
-            "database_name"
             "command_name": "find",
             "command": {
               "find": "datakeys",

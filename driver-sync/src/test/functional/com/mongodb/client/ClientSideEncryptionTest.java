@@ -141,9 +141,16 @@ public class ClientSideEncryptionTest {
                             autoEncryptOptionsDocument.getDocument("schema", null)));
         }
 
+        Map<String, Map<String, Object>> kmsProvidersMap = new HashMap<String, Map<String, Object>>();
+
+        Map<String, Object> kmsProviderMap = new HashMap<String, Object>();
+        kmsProviderMap.put("awsAccessKey", System.getProperty("awsAccessKey"));
+        kmsProviderMap.put("awsSecretAccessKey", System.getProperty("awsSecretAccessKey"));
+        kmsProvidersMap.put("aws", kmsProviderMap);
+
         mongoClient = MongoClients.create(builder
                 .clientSideEncryptionOptions(new ClientSideEncryptionOptions(null, "admin.datakeys",
-                        Collections.<String, Map<String, Object>>emptyMap(), namespaceToSchemaMap, Collections.<String, Object>emptyMap()))
+                        kmsProvidersMap, namespaceToSchemaMap, Collections.<String, Object>emptyMap()))
                 .addCommandListener(commandListener)
                 .applyToSocketSettings(new Block<SocketSettings.Builder>() {
                     @Override

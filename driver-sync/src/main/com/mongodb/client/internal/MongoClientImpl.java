@@ -49,6 +49,7 @@ import javax.net.ssl.SSLContext;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static com.mongodb.assertions.Assertions.notNull;
 import static com.mongodb.internal.event.EventListenerHelper.getCommandListener;
@@ -238,22 +239,32 @@ public final class MongoClientImpl implements MongoClient {
         // TODO: make this configurable, but default according to platform
         MongoClient mongocryptdClient =
                 MongoClients.create("mongodb://%2Ftmp%2Fmongocryptd.sock/?serverSelectionTimeoutMS=1000");
-        try {
-            return new CryptImpl(
-                    settings.getClientSideEncryptionOptions(),
-                    MongoCrypts.create(
-                            MongoCryptOptions.builder()
-                                    .accessKeyId(System.getProperty("awsAccessKey"))
-                                    .secretAccessKey(System.getProperty("awsSecretAccessKey"))
-                                    .build()),
-                    new CollectionInfoRetrieverImpl(this),
-                    new CommandMarkerImpl(mongocryptdClient, "mongocryptd"),
-                    new KeyVaultImpl(getDatabase("admin").getCollection("datakeys", BsonDocument.class)),
-                    new KeyManagementServiceImpl(SSLContext.getDefault(), 443, 10000));
+        Map<String, Object> awsKmsProviderMap = settings.getClientSideEncryptionOptions().getKmsProviders().get("aws");
 
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getDefault();
         } catch (NoSuchAlgorithmException e) {
             throw new MongoClientException("Unable to create default SSLContext", e);
         }
+
+        // TODO: better error checking
+        // TODO: handle "local" KMS provider
+        String awsAccessKey = (String) awsKmsProviderMap.get("awsAccessKey");
+        String awsSecretAccessKey = (String) awsKmsProviderMap.get("awsSecretAccessKey");
+
+        return new CryptImpl(
+                settings.getClientSideEncryptionOptions(),
+                MongoCrypts.create(
+                        MongoCryptOptions.builder()
+                                .awsAccessKeyId(awsAccessKey)
+                                .awsSecretAccessKey(awsSecretAccessKey)
+                                .build()),
+                new CollectionInfoRetrieverImpl(this),
+                new CommandMarkerImpl(mongocryptdClient, "mongocryptd"),
+                new KeyVaultImpl(getDatabase("admin").getCollection("datakeys", BsonDocument.class)),
+                new KeyManagementServiceImpl(sslContext, 443, 10000));
+
     }
 }
 
