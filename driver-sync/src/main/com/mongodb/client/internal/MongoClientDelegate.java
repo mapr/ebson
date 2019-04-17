@@ -39,6 +39,7 @@ import com.mongodb.connection.ClusterConnectionMode;
 import com.mongodb.connection.ClusterDescription;
 import com.mongodb.connection.ClusterType;
 import com.mongodb.connection.ServerDescription;
+import com.mongodb.internal.binding.ClusterAwareReadWriteBinding;
 import com.mongodb.internal.session.ServerSessionPool;
 import com.mongodb.lang.Nullable;
 import com.mongodb.operation.ReadOperation;
@@ -223,15 +224,18 @@ public class MongoClientDelegate {
 
         ReadWriteBinding getReadWriteBinding(final ReadPreference readPreference, final ReadConcern readConcern,
                                              @Nullable final ClientSession session, final boolean ownsSession) {
-            ReadWriteBinding readWriteBinding = new ClusterBinding(cluster, getReadPreferenceForBinding(readPreference, session),
-                    readConcern);
+            ClusterAwareReadWriteBinding readWriteBinding = new ClusterBinding(cluster,
+                    getReadPreferenceForBinding(readPreference, session), readConcern);
+
             if (crypt != null) {
                 readWriteBinding = new CryptBinding(readWriteBinding, crypt);
             }
+            
             if (session != null) {
-                readWriteBinding = new ClientSessionBinding(session, ownsSession, readWriteBinding);
+                return new ClientSessionBinding(session, ownsSession, readWriteBinding);
+            } else {
+                return readWriteBinding;
             }
-            return readWriteBinding;
         }
 
         private void labelException(final @Nullable ClientSession session, final MongoException e) {

@@ -19,15 +19,17 @@ package com.mongodb.client.internal;
 import com.mongodb.ReadPreference;
 import com.mongodb.binding.ConnectionSource;
 import com.mongodb.binding.ReadWriteBinding;
+import com.mongodb.connection.Cluster;
 import com.mongodb.connection.Connection;
 import com.mongodb.connection.ServerDescription;
+import com.mongodb.internal.binding.ClusterAwareReadWriteBinding;
 import com.mongodb.session.SessionContext;
 
-class CryptBinding implements ReadWriteBinding {
-    private final ReadWriteBinding wrapped;
+class CryptBinding implements ClusterAwareReadWriteBinding {
+    private final ClusterAwareReadWriteBinding wrapped;
     private final Crypt crypt;
 
-    CryptBinding(final ReadWriteBinding wrapped, final Crypt crypt) {
+    CryptBinding(final ClusterAwareReadWriteBinding wrapped, final Crypt crypt) {
         this.crypt = crypt;
         this.wrapped = wrapped;
     }
@@ -66,6 +68,11 @@ class CryptBinding implements ReadWriteBinding {
     @Override
     public void release() {
         wrapped.release();
+    }
+
+    @Override
+    public Cluster getCluster() {
+        return wrapped.getCluster();
     }
 
     private class CryptConnectionSource implements ConnectionSource {
