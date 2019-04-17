@@ -144,8 +144,8 @@ public class ClientSideEncryptionTest {
         Map<String, Map<String, Object>> kmsProvidersMap = new HashMap<String, Map<String, Object>>();
 
         Map<String, Object> kmsProviderMap = new HashMap<String, Object>();
-        kmsProviderMap.put("awsAccessKey", System.getProperty("awsAccessKey"));
-        kmsProviderMap.put("awsSecretAccessKey", System.getProperty("awsSecretAccessKey"));
+        kmsProviderMap.put("accessKeyId", System.getProperty("awsAccessKeyId"));
+        kmsProviderMap.put("secretAccessKey", System.getProperty("awsSecretAccessKey"));
         kmsProvidersMap.put("aws", kmsProviderMap);
 
         mongoClient = MongoClients.create(builder

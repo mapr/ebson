@@ -38,14 +38,17 @@ import com.mongodb.connection.SocketSettings;
 import com.mongodb.connection.SocketStreamFactory;
 import com.mongodb.connection.StreamFactory;
 import com.mongodb.connection.StreamFactoryFactory;
+import com.mongodb.crypt.capi.MongoAwsKmsProviderOptions;
 import com.mongodb.crypt.capi.MongoCryptOptions;
 import com.mongodb.crypt.capi.MongoCrypts;
+import com.mongodb.crypt.capi.MongoLocalKmsProviderOptions;
 import com.mongodb.lang.Nullable;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.net.ssl.SSLContext;
+import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
@@ -239,7 +242,28 @@ public final class MongoClientImpl implements MongoClient {
         // TODO: make this configurable, but default according to platform
         MongoClient mongocryptdClient =
                 MongoClients.create("mongodb://%2Ftmp%2Fmongocryptd.sock/?serverSelectionTimeoutMS=1000");
-        Map<String, Object> awsKmsProviderMap = settings.getClientSideEncryptionOptions().getKmsProviders().get("aws");
+
+        MongoCryptOptions.Builder mongoCryptOptionsBuilder = MongoCryptOptions.builder();
+
+        for (Map.Entry<String, Map<String, Object>> entry :
+                settings.getClientSideEncryptionOptions().getKmsProviders().entrySet()) {
+            if (entry.getKey().equals("aws")) {
+                mongoCryptOptionsBuilder.awsKmsProviderOptions(
+                        MongoAwsKmsProviderOptions.builder()
+                                .accessKeyId((String) entry.getValue().get("accessKeyId"))
+                                .secretAccessKey((String) entry.getValue().get("secretAccessKey"))
+                                .build()
+                );
+            } else if (entry.getKey().equals("local")) {
+                mongoCryptOptionsBuilder.localKmsProviderOptions(
+                        MongoLocalKmsProviderOptions.builder()
+                                .localMasterKey(ByteBuffer.wrap((byte[]) entry.getValue().get("localMasterKey")))
+                                .build()
+                );
+            } else {
+                throw new MongoClientException("Unrecognized KMS provider key: " + entry.getKey());
+            }
+        }
 
         SSLContext sslContext = null;
         try {
@@ -248,23 +272,13 @@ public final class MongoClientImpl implements MongoClient {
             throw new MongoClientException("Unable to create default SSLContext", e);
         }
 
-        // TODO: better error checking
-        // TODO: handle "local" KMS provider
-        String awsAccessKey = (String) awsKmsProviderMap.get("awsAccessKey");
-        String awsSecretAccessKey = (String) awsKmsProviderMap.get("awsSecretAccessKey");
-
         return new CryptImpl(
                 settings.getClientSideEncryptionOptions(),
-                MongoCrypts.create(
-                        MongoCryptOptions.builder()
-                                .awsAccessKeyId(awsAccessKey)
-                                .awsSecretAccessKey(awsSecretAccessKey)
-                                .build()),
+                MongoCrypts.create(mongoCryptOptionsBuilder.build()),
                 new CollectionInfoRetrieverImpl(this),
                 new CommandMarkerImpl(mongocryptdClient, "mongocryptd"),
                 new KeyVaultImpl(getDatabase("admin").getCollection("datakeys", BsonDocument.class)),
                 new KeyManagementServiceImpl(sslContext, 443, 10000));
-
     }
 }
 
