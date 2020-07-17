@@ -7,6 +7,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 ############################################
 #            Main Program                  #
 ############################################
+RELEASE=${RELEASE:false}
 
 echo ${RING_FILE_GPG_BASE64} | base64 -d > ${PROJECT_DIRECTORY}/secring.gpg
 
@@ -24,5 +25,10 @@ echo "Publishing snapshot with jdk11"
 export JAVA_HOME="/opt/java/jdk11"
 
 ./gradlew -version
-./gradlew publishSnapshots
-./gradlew :bson-scala:publishSnapshots :driver-scala:publishSnapshots -PdefaultScalaVersions=2.11.12,2.12.10
+if [ "$RELEASE" == "true" ]; then
+  ./gradlew clean publishArchives
+  ./gradlew :bson-scala:publishArchives :driver-scala:publishArchives -PdefaultScalaVersions=2.11.12,2.12.10
+else
+  ./gradlew publishSnapshots
+  ./gradlew :bson-scala:publishSnapshots :driver-scala:publishSnapshots -PdefaultScalaVersions=2.11.12,2.12.10
+fi
