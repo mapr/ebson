@@ -28,6 +28,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import static com.mongodb.client.model.expressions.Expressions.of;
+import static com.mongodb.client.model.expressions.Expressions.ofNull;
 import static com.mongodb.client.model.expressions.Expressions.ofStringArray;
 
 final class MqlExpression<T extends Expression>
@@ -285,6 +286,11 @@ final class MqlExpression<T extends Expression>
     /** @see Expression */
 
     @Override
+    public <Q extends Expression, R extends Expression> R apply(final Function<Q, R> f) {
+        return f.apply(this.assertImplementsAllExpressions());
+    }
+
+    @Override
     public BooleanExpression eq(final Expression eq) {
         return new MqlExpression<>(ast("$eq", eq));
     }
@@ -315,7 +321,7 @@ final class MqlExpression<T extends Expression>
     }
 
     public BooleanExpression isBoolean() {
-        return new MqlExpression<>(ast("$type")).eq(of("bool"));
+        return new MqlExpression<>(astWrapped("$type")).eq(of("bool"));
     }
 
     @Override
@@ -342,7 +348,7 @@ final class MqlExpression<T extends Expression>
     }
 
     public BooleanExpression isString() {
-        return new MqlExpression<>(ast("$type")).eq(of("string"));
+        return new MqlExpression<>(astWrapped("$type")).eq(of("string"));
     }
 
     @Override
@@ -351,7 +357,7 @@ final class MqlExpression<T extends Expression>
     }
 
     public BooleanExpression isDate() {
-        return ofStringArray("date").contains(new MqlExpression<>(ast("$type")));
+        return ofStringArray("date").contains(new MqlExpression<>(astWrapped("$type")));
     }
 
     @Override
@@ -364,7 +370,7 @@ final class MqlExpression<T extends Expression>
     }
 
     public Expression ifNull(final Expression ifNull) {
-        return new MqlExpression<>(ast("$ifNull", ifNull, Expressions.ofNull()))
+        return new MqlExpression<>(ast("$ifNull", ifNull, ofNull()))
                 .assertImplementsAllExpressions();
     }
 
@@ -383,7 +389,7 @@ final class MqlExpression<T extends Expression>
     }
 
     public BooleanExpression isDocument() {
-        return new MqlExpression<>(ast("$type")).eq(of("object"));
+        return new MqlExpression<>(astWrapped("$type")).eq(of("object"));
     }
 
     @Override
@@ -400,6 +406,10 @@ final class MqlExpression<T extends Expression>
         return this.isMap().cond(this.assertImplementsAllExpressions(), other);
     }
 
+    public BooleanExpression isNull() {
+        return this.eq(ofNull());
+    }
+
     @Override
     public StringExpression asString() {
         return new MqlExpression<>(astWrapped("$toString"));
@@ -410,6 +420,32 @@ final class MqlExpression<T extends Expression>
                 .append("input", this.fn.apply(cr).bsonValue)
                 .append("onError", extractBsonValue(cr, orElse))
                 .append("to", new BsonString(to)));
+    }
+
+    @Override
+    public <T0 extends Expression, R0 extends Expression> R0 switchMap(
+            final Function<Branches, BranchesTerminal<T0, R0>> switchMap) {
+        T0 value = this.assertImplementsAllExpressions();
+        BranchesTerminal<T0, R0> construct = switchMap.apply(new Branches());
+        return switchMapInternal(value, construct);
+    }
+
+    private <T0 extends Expression, R0 extends Expression> R0 switchMapInternal(
+            final T0 value, final BranchesTerminal<T0, R0> construct) {
+        return newMqlExpression((cr) -> {
+            BsonArray branches = new BsonArray();
+            for (Function<T0, SwitchCase<R0>> fn : construct.getBranches()) {
+                SwitchCase<R0> result = fn.apply(value);
+                branches.add(new BsonDocument()
+                        .append("case", extractBsonValue(cr, result.getCaseValue()))
+                        .append("then", extractBsonValue(cr, result.getThenValue())));
+            }
+            BsonDocument switchBson = new BsonDocument().append("branches", branches);
+            if (construct.getDefaults() != null) {
+                switchBson = switchBson.append("default", extractBsonValue(cr, construct.getDefaults().apply(value)));
+            }
+            return astDoc("$switch", switchBson);
+        });
     }
 
     @Override
