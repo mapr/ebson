@@ -19,6 +19,7 @@ package com.mongodb.client.model.expressions;
 import org.bson.conversions.Bson;
 
 import java.time.Instant;
+import java.util.function.Function;
 
 import static com.mongodb.client.model.expressions.Expressions.of;
 import static com.mongodb.client.model.expressions.Expressions.ofMap;
@@ -98,4 +99,8 @@ public interface DocumentExpression extends Expression {
     <T extends Expression> ArrayExpression<T> getArray(String fieldName, ArrayExpression<? extends T> other);
 
     DocumentExpression merge(DocumentExpression other);
+
+
+    <R extends Expression> R passDocumentTo(Function<? super DocumentExpression, R> f);
+    <R extends Expression> R switchDocumentOn(Function<Branches, ? extends BranchesTerminal<? super DocumentExpression, R>> on);
 }
