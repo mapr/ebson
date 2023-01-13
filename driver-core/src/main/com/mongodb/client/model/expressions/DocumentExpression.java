@@ -101,6 +101,6 @@ public interface DocumentExpression extends Expression {
     DocumentExpression merge(DocumentExpression other);
 
 
-    <R extends Expression> R passDocumentTo(Function<? super DocumentExpression, R> f);
-    <R extends Expression> R switchDocumentOn(Function<Branches, ? extends BranchesTerminal<? super DocumentExpression, R>> on);
+    <R extends Expression> R passDocumentTo(Function<? super DocumentExpression, ? extends R> f);
+    <R extends Expression> R switchDocumentOn(Function<Branches, ? extends BranchesTerminal<? super DocumentExpression, ? extends R>> on);
 }
