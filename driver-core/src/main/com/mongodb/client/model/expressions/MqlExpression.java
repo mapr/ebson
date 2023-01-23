@@ -96,7 +96,7 @@ final class MqlExpression<T extends Expression>
         return (cr) -> {
             BsonArray value = new BsonArray();
             value.add(this.toBsonValue(cr));
-            value.add(extractBsonValue(cr, param1));
+            value.add(toBsonValue(cr, param1));
             return new AstPlaceholder(new BsonDocument(name, value));
         };
     }
@@ -105,8 +105,8 @@ final class MqlExpression<T extends Expression>
         return (cr) -> {
             BsonArray value = new BsonArray();
             value.add(this.toBsonValue(cr));
-            value.add(extractBsonValue(cr, param1));
-            value.add(extractBsonValue(cr, param2));
+            value.add(toBsonValue(cr, param1));
+            value.add(toBsonValue(cr, param2));
             return new AstPlaceholder(new BsonDocument(name, value));
         };
     }
@@ -116,7 +116,7 @@ final class MqlExpression<T extends Expression>
      * the only implementation of Expression and all subclasses, so this will
      * not mis-cast an expression as anything else.
      */
-    static BsonValue extractBsonValue(final CodecRegistry cr, final Expression expression) {
+    static BsonValue toBsonValue(final CodecRegistry cr, final Expression expression) {
         return ((MqlExpression<?>) expression).toBsonValue(cr);
     }
 
@@ -271,7 +271,7 @@ final class MqlExpression<T extends Expression>
         return newMqlExpression((cr) -> astDoc("$setField", new BsonDocument()
                 .append("field", new BsonString(fieldName))
                 .append("input", this.toBsonValue(cr))
-                .append("value", extractBsonValue(cr, exp))));
+                .append("value", toBsonValue(cr, exp))));
     }
 
     @Override
@@ -380,12 +380,12 @@ final class MqlExpression<T extends Expression>
             for (Function<T0, SwitchCase<R0>> fn : construct.getBranches()) {
                 SwitchCase<R0> result = fn.apply(value);
                 branches.add(new BsonDocument()
-                        .append("case", extractBsonValue(cr, result.getCaseValue()))
-                        .append("then", extractBsonValue(cr, result.getThenValue())));
+                        .append("case", toBsonValue(cr, result.getCaseValue()))
+                        .append("then", toBsonValue(cr, result.getThenValue())));
             }
             BsonDocument switchBson = new BsonDocument().append("branches", branches);
             if (construct.getDefaults() != null) {
-                switchBson = switchBson.append("default", extractBsonValue(cr, construct.getDefaults().apply(value)));
+                switchBson = switchBson.append("default", toBsonValue(cr, construct.getDefaults().apply(value)));
             }
             return astDoc("$switch", switchBson);
         });
@@ -530,7 +530,7 @@ final class MqlExpression<T extends Expression>
     private Function<CodecRegistry, AstPlaceholder> convertInternal(final String to, final Expression other) {
         return (cr) -> astDoc("$convert", new BsonDocument()
                 .append("input", this.fn.apply(cr).bsonValue)
-                .append("onError", extractBsonValue(cr, other))
+                .append("onError", toBsonValue(cr, other))
                 .append("to", new BsonString(to)));
     }
 
@@ -547,7 +547,7 @@ final class MqlExpression<T extends Expression>
         T varThis = variable("$$this");
         return new MqlExpression<>((cr) -> astDoc("$map", new BsonDocument()
                 .append("input", this.toBsonValue(cr))
-                .append("in", extractBsonValue(cr, in.apply(varThis)))));
+                .append("in", toBsonValue(cr, in.apply(varThis)))));
     }
 
     @Override
@@ -555,7 +555,7 @@ final class MqlExpression<T extends Expression>
         T varThis = variable("$$this");
         return new MqlExpression<>((cr) -> astDoc("$filter", new BsonDocument()
                 .append("input", this.toBsonValue(cr))
-                .append("cond", extractBsonValue(cr, predicate.apply(varThis)))));
+                .append("cond", toBsonValue(cr, predicate.apply(varThis)))));
     }
 
     public ArrayExpression<T> sort() {
@@ -569,8 +569,8 @@ final class MqlExpression<T extends Expression>
         T varValue = variable("$$value");
         return newMqlExpression((cr) -> astDoc("$reduce", new BsonDocument()
                 .append("input", this.toBsonValue(cr))
-                .append("initialValue", extractBsonValue(cr, initialValue))
-                .append("in", extractBsonValue(cr, in.apply(varValue, varThis)))));
+                .append("initialValue", toBsonValue(cr, initialValue))
+                .append("in", toBsonValue(cr, in.apply(varValue, varThis)))));
     }
 
     @Override
@@ -613,15 +613,15 @@ final class MqlExpression<T extends Expression>
     @Override
     public ArrayExpression<T> maxN(final IntegerExpression n) {
         return newMqlExpression((CodecRegistry cr) -> astDoc("$maxN", new BsonDocument()
-                .append("input", extractBsonValue(cr, this))
-                .append("n", extractBsonValue(cr, n))));
+                .append("input", toBsonValue(cr, this))
+                .append("n", toBsonValue(cr, n))));
     }
 
     @Override
     public ArrayExpression<T> minN(final IntegerExpression n) {
         return newMqlExpression((CodecRegistry cr) -> astDoc("$minN", new BsonDocument()
-                .append("input", extractBsonValue(cr, this))
-                .append("n", extractBsonValue(cr, n))));
+                .append("input", toBsonValue(cr, this))
+                .append("n", toBsonValue(cr, n))));
     }
 
     @Override
@@ -672,7 +672,7 @@ final class MqlExpression<T extends Expression>
         String name = "$in";
         return new MqlExpression<>((cr) -> {
             BsonArray value = new BsonArray();
-            value.add(extractBsonValue(cr, item));
+            value.add(toBsonValue(cr, item));
             value.add(this.toBsonValue(cr));
             return new AstPlaceholder(new BsonDocument(name, value));
         }).assertImplementsAllExpressions();
@@ -785,7 +785,7 @@ final class MqlExpression<T extends Expression>
     private MqlExpression<Expression> usingTimezone(final String name, final StringExpression timezone) {
         return new MqlExpression<>((cr) -> astDoc(name, new BsonDocument()
                 .append("date", this.toBsonValue(cr))
-                .append("timezone", extractBsonValue(cr, timezone))));
+                .append("timezone", toBsonValue(cr, timezone))));
     }
 
     @Override
@@ -842,23 +842,23 @@ final class MqlExpression<T extends Expression>
     public StringExpression asString(final StringExpression timezone, final StringExpression format) {
         return newMqlExpression((cr) -> astDoc("$dateToString", new BsonDocument()
                 .append("date", this.toBsonValue(cr))
-                .append("format", extractBsonValue(cr, format))
-                .append("timezone", extractBsonValue(cr, timezone))));
+                .append("format", toBsonValue(cr, format))
+                .append("timezone", toBsonValue(cr, timezone))));
     }
 
     @Override
     public DateExpression parseDate(final StringExpression timezone, final StringExpression format) {
         return newMqlExpression((cr) -> astDoc("$dateFromString", new BsonDocument()
                 .append("dateString", this.toBsonValue(cr))
-                .append("format", extractBsonValue(cr, format))
-                .append("timezone", extractBsonValue(cr, timezone))));
+                .append("format", toBsonValue(cr, format))
+                .append("timezone", toBsonValue(cr, timezone))));
     }
 
     @Override
     public DateExpression parseDate(final StringExpression format) {
         return newMqlExpression((cr) -> astDoc("$dateFromString", new BsonDocument()
                 .append("dateString", this.toBsonValue(cr))
-                .append("format", extractBsonValue(cr, format))));
+                .append("format", toBsonValue(cr, format))));
     }
 
     @Override
@@ -928,7 +928,7 @@ final class MqlExpression<T extends Expression>
     public T get(final StringExpression key) {
         return newMqlExpression((cr) -> astDoc("$getField", new BsonDocument()
                 .append("input", this.fn.apply(cr).bsonValue)
-                .append("field", extractBsonValue(cr, key))));
+                .append("field", toBsonValue(cr, key))));
     }
 
     @SuppressWarnings("unchecked")
@@ -940,15 +940,15 @@ final class MqlExpression<T extends Expression>
     @Override
     public MapExpression<T> set(final StringExpression key, final T value) {
         return newMqlExpression((cr) -> astDoc("$setField", new BsonDocument()
-                .append("field", extractBsonValue(cr, key))
+                .append("field", toBsonValue(cr, key))
                 .append("input", this.toBsonValue(cr))
-                .append("value", extractBsonValue(cr, value))));
+                .append("value", toBsonValue(cr, value))));
     }
 
     @Override
     public MapExpression<T> unset(final StringExpression key) {
         return newMqlExpression((cr) -> astDoc("$unsetField", new BsonDocument()
-                .append("field", extractBsonValue(cr, key))
+                .append("field", toBsonValue(cr, key))
                 .append("input", this.toBsonValue(cr))));
     }
 

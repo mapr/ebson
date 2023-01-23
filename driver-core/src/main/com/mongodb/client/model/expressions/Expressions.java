@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.mongodb.client.model.expressions.MqlExpression.AstPlaceholder;
-import static com.mongodb.client.model.expressions.MqlExpression.extractBsonValue;
+import static com.mongodb.client.model.expressions.MqlExpression.toBsonValue;
 
 /**
  * Convenience methods related to {@link Expression}, used primarily to
@@ -317,8 +317,8 @@ public final class Expressions {
         Assertions.notNull("v", v);
         return new MqlExpression<>((cr) -> {
             BsonDocument document = new BsonDocument();
-            document.put("k", extractBsonValue(cr, k));
-            document.put("v", extractBsonValue(cr, v));
+            document.put("k", toBsonValue(cr, k));
+            document.put("v", toBsonValue(cr, v));
             return new AstPlaceholder(document);
         });
     }
