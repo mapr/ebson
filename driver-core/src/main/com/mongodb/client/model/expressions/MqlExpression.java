@@ -421,7 +421,7 @@ final class MqlExpression<T extends Expression>
         return new MqlExpression<>(ast("$lte", other));
     }
 
-    public BooleanExpression isBoolean() {
+    BooleanExpression isBoolean() {
         return new MqlExpression<>(astWrapped("$type")).eq(of("bool"));
     }
 
@@ -430,7 +430,7 @@ final class MqlExpression<T extends Expression>
         return this.isBoolean().cond(this, other);
     }
 
-    public BooleanExpression isNumber() {
+    BooleanExpression isNumber() {
         return new MqlExpression<>(astWrapped("$isNumber"));
     }
 
@@ -439,7 +439,7 @@ final class MqlExpression<T extends Expression>
         return this.isNumber().cond(this, other);
     }
 
-    public BooleanExpression isInteger() {
+    BooleanExpression isInteger() {
         return switchOn(on -> on
                 .isNumber(v -> v.round().eq(v))
                 .defaults(v -> of(false)));
@@ -462,7 +462,7 @@ final class MqlExpression<T extends Expression>
                 .defaults(v -> other));
     }
 
-    public BooleanExpression isString() {
+    BooleanExpression isString() {
         return new MqlExpression<>(astWrapped("$type")).eq(of("string"));
     }
 
@@ -471,7 +471,7 @@ final class MqlExpression<T extends Expression>
         return this.isString().cond(this, other);
     }
 
-    public BooleanExpression isDate() {
+    BooleanExpression isDate() {
         return ofStringArray("date").contains(new MqlExpression<>(astWrapped("$type")));
     }
 
@@ -480,7 +480,7 @@ final class MqlExpression<T extends Expression>
         return this.isDate().cond(this, other);
     }
 
-    public BooleanExpression isArray() {
+    BooleanExpression isArray() {
         return new MqlExpression<>(astWrapped("$isArray"));
     }
 
@@ -558,13 +558,13 @@ final class MqlExpression<T extends Expression>
                 .append("cond", toBsonValue(cr, predicate.apply(varThis)))));
     }
 
-    public ArrayExpression<T> sort() {
+    ArrayExpression<T> sort() {
         return new MqlExpression<>((cr) -> astDoc("$sortArray", new BsonDocument()
                 .append("input", this.toBsonValue(cr))
                 .append("sortBy", new BsonInt32(1))));
     }
 
-    public T reduce(final T initialValue, final BinaryOperator<T> in) {
+    private T reduce(final T initialValue, final BinaryOperator<T> in) {
         T varThis = variable("$$this");
         T varValue = variable("$$value");
         return newMqlExpression((cr) -> astDoc("$reduce", new BsonDocument()
