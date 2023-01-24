@@ -484,11 +484,6 @@ final class MqlExpression<T extends Expression>
         return new MqlExpression<>(astWrapped("$isArray"));
     }
 
-    private Expression ifNull(final Expression ifNull) {
-        return new MqlExpression<>(ast("$ifNull", ifNull, ofNull()))
-                .assertImplementsAllExpressions();
-    }
-
     /**
      * checks if array (but cannot check type)
      * user asserts array is of type R
@@ -934,7 +929,8 @@ final class MqlExpression<T extends Expression>
     @SuppressWarnings("unchecked")
     @Override
     public T get(final StringExpression key, final T other) {
-        return (T) ((MqlExpression<?>) get(key)).ifNull(other);
+        MqlExpression<?> mqlExpression = (MqlExpression<?>) get(key);
+        return (T) mqlExpression.eq(ofRem()).cond(other, mqlExpression);
     }
 
     @Override

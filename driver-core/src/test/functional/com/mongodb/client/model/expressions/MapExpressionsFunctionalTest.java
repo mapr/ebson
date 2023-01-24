@@ -17,6 +17,7 @@
 package com.mongodb.client.model.expressions;
 
 import org.bson.BsonDocument;
+import org.bson.BsonNull;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
 
@@ -76,7 +77,7 @@ class MapExpressionsFunctionalTest extends AbstractExpressionsFunctionalTest {
                 mapKey123.unset("key"));
         // "other" parameter
         assertExpression(
-                1,
+                null,
                 ofMap(Document.parse("{ 'null': null }")).get("null", of(1)));
     }
 
@@ -94,6 +95,9 @@ class MapExpressionsFunctionalTest extends AbstractExpressionsFunctionalTest {
         assertExpression(
                 true,
                 e.has("null"));
+        // consistency:
+        assertExpression(true, e.has("null"));
+        assertExpression(null, e.get("null", of(1)));
     }
 
     @Test
