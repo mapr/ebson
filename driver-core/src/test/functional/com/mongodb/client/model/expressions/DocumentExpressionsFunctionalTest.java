@@ -268,13 +268,16 @@ class DocumentExpressionsFunctionalTest extends AbstractExpressionsFunctionalTes
     @Test
     public void hasTest() {
         assumeTrue(serverVersionAtLeast(5, 0)); // get/setField
-        DocumentExpression d = ofDoc("{a: 1}");
+        DocumentExpression d = ofDoc("{a: 1, null: null}");
         assertExpression(
                 true,
                 d.has("a"),
-                "{'$ne': [{'$getField': {'input': {'$literal': {'a': 1}}, 'field': 'a'}}, '$$REMOVE']}");
+                "{'$ne': [{'$getField': {'input': {'$literal': {'a': 1, 'null': null}}, 'field': 'a'}}, '$$REMOVE']}");
         assertExpression(
                 false,
                 d.has("not_a"));
+        assertExpression(
+                true,
+                d.has("null"));
     }
 }
