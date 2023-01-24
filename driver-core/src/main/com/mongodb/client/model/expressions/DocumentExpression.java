@@ -34,7 +34,7 @@ import static com.mongodb.client.model.expressions.MqlUnchecked.Unchecked.TYPE_A
 public interface DocumentExpression extends Expression {
 
     /**
-     * True if {@code this} document has a field with the provided
+     * Whether {@code this} document has a field with the provided
      * {@code fieldName}.
      *
      * @mongodb.server.release 5.0

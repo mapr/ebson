@@ -32,7 +32,7 @@ import static com.mongodb.client.model.expressions.MqlUnchecked.Unchecked.PRESEN
 public interface MapExpression<T extends Expression> extends Expression {
 
     /**
-     * True if {@code this} map has a value (including null) for
+     * Whether {@code this} map has a value (including null) for
      * the provided key.
      *
      * @param key the key.
@@ -41,7 +41,7 @@ public interface MapExpression<T extends Expression> extends Expression {
     BooleanExpression has(StringExpression key);
 
     /**
-     * True if {@code this} map has a value (including null) for
+     * Whether {@code this} map has a value (including null) for
      * the provided key.
      *
      * @param key the key.

@@ -58,7 +58,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
     IntegerExpression size();
 
     /**
-     * True if any value in {@code this} array satisfies the predicate.
+     * Whether any value in {@code this} array satisfies the predicate.
      *
      * @param predicate the predicate.
      * @return the resulting value.
@@ -66,7 +66,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
     BooleanExpression any(Function<? super T, BooleanExpression> predicate);
 
     /**
-     * True if all values in {@code this} array satisfy the predicate.
+     * Whether all values in {@code this} array satisfy the predicate.
      *
      * @param predicate the predicate.
      * @return the resulting value.
@@ -266,7 +266,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
     T last();
 
     /**
-     * True if {@code this} array contains a value that is
+     * Whether {@code this} array contains a value that is
      * {@linkplain #eq equal} to the provided {@code value}.
      *
      * @param value the value.
