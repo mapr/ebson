@@ -79,7 +79,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
      *
      * <p>The mapper may be used to transform the values of {@code this} array
      * into {@linkplain NumberExpression numbers}. If no transformation is
-     * necessary, then the identify function {@code array.sum(v -> v)} should
+     * necessary, then the identity function {@code array.sum(v -> v)} should
      * be used.
      *
      * @param mapper the mapper function.
@@ -93,7 +93,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
      *
      * <p>The mapper may be used to transform the values of {@code this} array
      * into {@linkplain NumberExpression numbers}. If no transformation is
-     * necessary, then the identify function {@code array.multiply(v -> v)}
+     * necessary, then the identity function {@code array.multiply(v -> v)}
      * should be used.
      *
      * @param mapper the mapper function.
@@ -150,7 +150,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
      *
      * <p>The mapper may be used to transform the values of {@code this} array
      * into {@linkplain StringExpression strings}. If no transformation is
-     * necessary, then the identify function {@code array.join(v -> v)} should
+     * necessary, then the identity function {@code array.join(v -> v)} should
      * be used.
      *
      * @param mapper the mapper function.
@@ -159,13 +159,14 @@ public interface ArrayExpression<T extends Expression> extends Expression {
     StringExpression join(Function<? super T, StringExpression> mapper);
 
     /**
-     * The array-concatenation of all the array values of {@code this} array,
+     * The {@linkplain #concat(ArrayExpression) array-concatenation}
+     * of all the array values of {@code this} array,
      * via the provided {@code mapper}. Returns the empty array if the array
      * is empty.
      *
      * <p>The mapper may be used to transform the values of {@code this} array
      * into {@linkplain ArrayExpression arrays}. If no transformation is
-     * necessary, then the identify function {@code array.concat(v -> v)} should
+     * necessary, then the identity function {@code array.concat(v -> v)} should
      * be used.
      *
      * @param mapper the mapper function.
@@ -175,13 +176,14 @@ public interface ArrayExpression<T extends Expression> extends Expression {
     <R extends Expression> ArrayExpression<R> concat(Function<? super T, ? extends ArrayExpression<? extends R>> mapper);
 
     /**
-     * The set union of all the array values of {@code this} array,
+     * The {@linkplain #union(ArrayExpression) set-union}
+     * of all the array values of {@code this} array,
      * via the provided {@code mapper}. Returns the empty array if the array
      * is empty.
      *
      * <p>The mapper may be used to transform the values of {@code this} array
      * into {@linkplain ArrayExpression arrays}. If no transformation is
-     * necessary, then the identify function {@code array.union(v -> v)} should
+     * necessary, then the identity function {@code array.union(v -> v)} should
      * be used.
      *
      * @param mapper the mapper function.
@@ -193,12 +195,12 @@ public interface ArrayExpression<T extends Expression> extends Expression {
     /**
      * The {@linkplain MapExpression map} value corresponding to the
      * {@linkplain EntryExpression entry} values of {@code this} array,
-     * via the provided {@code mapper}. Returns the empty array if the array
+     * via the provided {@code mapper}. Returns the empty map if the array
      * is empty.
      *
      * <p>The mapper may be used to transform the values of {@code this} array
      * into {@linkplain EntryExpression entries}. If no transformation is
-     * necessary, then the identify function {@code array.union(v -> v)} should
+     * necessary, then the identity function {@code array.union(v -> v)} should
      * be used.
      *
      * @see MapExpression#entrySet()
@@ -215,7 +217,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
      * <p>Warning: The use of this method is an assertion that
      * the index {@code i} is in bounds for the array.
      * If the index is out of bounds for this array, then
-     * the behaviour of the API is not defined.
+     * the behaviour of the API is not specified.
      *
      * @param i the index.
      * @return the resulting value.
@@ -230,7 +232,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
      * <p>Warning: The use of this method is an assertion that
      * the index {@code i} is in bounds for the array.
      * If the index is out of bounds for this array, then
-     * the behaviour of the API is not defined.
+     * the behaviour of the API is not specified.
      *
      * @param i the index.
      * @return the resulting value.
@@ -245,7 +247,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
      *
      * <p>Warning: The use of this method is an assertion that
      * the array is not empty.
-     * If the array is empty then the behaviour of the API is not defined.
+     * If the array is empty then the behaviour of the API is not specified.
      *
      * @mongodb.server.release 4.4
      * @return the resulting value.
@@ -258,7 +260,7 @@ public interface ArrayExpression<T extends Expression> extends Expression {
      *
      * <p>Warning: The use of this method is an assertion that
      * the array is not empty.
-     * If the array is empty then the behaviour of the API is not defined.
+     * If the array is empty then the behaviour of the API is not specified.
      *
      * @mongodb.server.release 4.4
      * @return the resulting value.

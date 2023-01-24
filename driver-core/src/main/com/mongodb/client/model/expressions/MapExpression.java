@@ -23,11 +23,11 @@ import static com.mongodb.client.model.expressions.MqlUnchecked.Unchecked.PRESEN
 
 /**
  * A map {@link Expression value} in the context of the MongoDB Query
- * Language (MQL). An map is a finite, unordered a set of
- * {@link EntryExpression entries} of a certain type, such that no entry key
- * is repeated. It is a mapping from keys to values.
+ * Language (MQL). A map is a finite set of
+ * {@link EntryExpression entries} of a certain type.
+ * No entry key is repeated. It is a mapping from keys to values.
  *
- * @param <T> the type of the elements
+ * @param <T> the type of the entry values
  */
 public interface MapExpression<T extends Expression> extends Expression {
 
@@ -80,7 +80,8 @@ public interface MapExpression<T extends Expression> extends Expression {
 
     /**
      * The value corresponding to the provided {@code key}, or the
-     * {@code other} value if an entry for the key is not present.
+     * {@code other} value if an entry for the key is not
+     * {@linkplain #has(StringExpression) present}.
      *
      * @param key the key.
      * @param other the other value.
@@ -90,7 +91,8 @@ public interface MapExpression<T extends Expression> extends Expression {
 
     /**
      * The value corresponding to the provided {@code key}, or the
-     * {@code other} value if an entry for the key is not present.
+     * {@code other} value if an entry for the key is not
+     * {@linkplain #has(StringExpression) present}.
      *
      * @param key the key.
      * @param other the other value.
@@ -127,8 +129,9 @@ public interface MapExpression<T extends Expression> extends Expression {
     }
 
     /**
-     * Returns a map with the same entries as {@code this} map, but with
-     * the specified {@code key} absent.
+     * Returns a map with the same entries as {@code this} map, but which
+     * {@linkplain #has(StringExpression) has} no entry with the specified
+     * {@code key}.
      *
      * <p>This does not affect the original map.
      *
@@ -138,8 +141,9 @@ public interface MapExpression<T extends Expression> extends Expression {
     MapExpression<T> unset(StringExpression key);
 
     /**
-     * Returns a map with the same entries as {@code this} map, but with
-     * the specified {@code key} absent.
+     * Returns a map with the same entries as {@code this} map, but which
+     * {@linkplain #has(StringExpression) has} no entry with the specified
+     * {@code key}.
      *
      * <p>This does not affect the original map.
      *

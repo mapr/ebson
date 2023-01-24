@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import static com.mongodb.client.model.expressions.MqlUnchecked.Unchecked.TYPE_ARGUMENT;
+
 /**
  * See {@link Branches}.
  *
@@ -113,7 +115,7 @@ public final class BranchesIntermediary<T extends Expression, R extends Expressi
 
     /**
      * A successful check for
-     * {@linkplain Expression#isBooleanOr(BooleanExpression) being a boolean}
+     * {@linkplain Expression#isNumberOr(NumberExpression) being a number}
      * produces a value specified by the {@code mapping}.
      *
      * @mongodb.server.release 4.4
@@ -172,20 +174,19 @@ public final class BranchesIntermediary<T extends Expression, R extends Expressi
      *
      * @param mapping the mapping.
      * @return the appended sequence of checks.
-     * @param <Q> the type of the array.
+     * @param <Q> the type of the elements of the resulting array.
      */
     @SuppressWarnings("unchecked")
-    public <Q extends Expression> BranchesIntermediary<T, R> isArray(final Function<? super ArrayExpression<Q>, ? extends R> mapping) {
+    public <Q extends Expression> BranchesIntermediary<T, R> isArray(final Function<? super ArrayExpression<@MqlUnchecked(TYPE_ARGUMENT) Q>, ? extends R> mapping) {
         return is(v -> mqlEx(v).isArray(), v -> mapping.apply((ArrayExpression<Q>) v));
     }
 
     /**
      * A successful check for
      * {@linkplain Expression#isDocumentOr(DocumentExpression) being a document}
+     * (or document-like value, see
+     * {@link MapExpression} and {@link EntryExpression})
      * produces a value specified by the {@code mapping}.
-     *
-     * <p>Note: Any value considered to be a document by this API
-     * will also be considered a map, and vice-versa.
      *
      * @param mapping the mapping.
      * @return the appended sequence of checks.
@@ -197,10 +198,9 @@ public final class BranchesIntermediary<T extends Expression, R extends Expressi
     /**
      * A successful check for
      * {@linkplain Expression#isMapOr(MapExpression) being a map}
+     * (or map-like value, see
+     * {@link DocumentExpression} and {@link EntryExpression})
      * produces a value specified by the {@code mapping}.
-     *
-     * <p>Note: Any value considered to be a map by this API
-     * will also be considered a document, and vice-versa.
      *
      * <p>Warning: The type argument of the map is not
      * enforced by the API. The use of this method is an
@@ -211,7 +211,7 @@ public final class BranchesIntermediary<T extends Expression, R extends Expressi
      * @param <Q> the type of the array.
      */
     @SuppressWarnings("unchecked")
-    public <Q extends Expression> BranchesIntermediary<T, R> isMap(final Function<? super MapExpression<Q>, ? extends R> mapping) {
+    public <Q extends Expression> BranchesIntermediary<T, R> isMap(final Function<? super MapExpression<@MqlUnchecked(TYPE_ARGUMENT) Q>, ? extends R> mapping) {
         return is(v -> mqlEx(v).isDocumentOrMap(), v -> mapping.apply((MapExpression<Q>) v));
     }
 

@@ -124,7 +124,7 @@ public final class Branches<T extends Expression> {
 
     /**
      * A successful check for
-     * {@linkplain Expression#isBooleanOr(BooleanExpression) being a boolean}
+     * {@linkplain Expression#isNumberOr(NumberExpression) being a number}
      * produces a value specified by the {@code mapping}.
      *
      * @mongodb.server.release 4.4
@@ -198,10 +198,9 @@ public final class Branches<T extends Expression> {
     /**
      * A successful check for
      * {@linkplain Expression#isDocumentOr(DocumentExpression) being a document}
+     * (or document-like value, see
+     * {@link MapExpression} and {@link EntryExpression})
      * produces a value specified by the {@code mapping}.
-     *
-     * <p>Note: Any value considered to be a document by this API
-     * will also be considered a map, and vice-versa.
      *
      * @param mapping the mapping.
      * @return the appended sequence of checks.
@@ -214,10 +213,9 @@ public final class Branches<T extends Expression> {
     /**
      * A successful check for
      * {@linkplain Expression#isMapOr(MapExpression) being a map}
+     * (or map-like value, see
+     * {@link DocumentExpression} and {@link EntryExpression})
      * produces a value specified by the {@code mapping}.
-     *
-     * <p>Note: Any value considered to be a map by this API
-     * will also be considered a document, and vice-versa.
      *
      * <p>Warning: The type argument of the map is not
      * enforced by the API. The use of this method is an

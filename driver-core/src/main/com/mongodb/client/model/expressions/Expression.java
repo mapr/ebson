@@ -222,7 +222,7 @@ public interface Expression {
 
     /**
      * {@code this} value as a {@linkplain DocumentExpression document} if
-     * {@code this} is a document or document-like value (see
+     * {@code this} is a document (or document-like value, see
      * {@link MapExpression} and {@link EntryExpression})
      * or the {@code other} document value if {@code this} is null,
      * or is missing, or is of any other non-document type.
@@ -235,7 +235,7 @@ public interface Expression {
 
     /**
      * {@code this} value as a {@linkplain MapExpression map} if
-     * {@code this} is a map or map-like value (see
+     * {@code this} is a map (or map-like value, see
      * {@link DocumentExpression} and {@link EntryExpression})
      * or the {@code other} map value if {@code this} is null,
      * or is missing, or is of any other non-map type.

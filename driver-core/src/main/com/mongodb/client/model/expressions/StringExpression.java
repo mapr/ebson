@@ -21,7 +21,8 @@ import java.util.function.Function;
 import static com.mongodb.client.model.expressions.Expressions.of;
 
 /**
- * Expresses a string value.
+ * A string {@linkplain Expression value} in the context of the MongoDB Query
+ * Language (MQL).
  */
 public interface StringExpression extends Expression {
 
@@ -135,10 +136,15 @@ public interface StringExpression extends Expression {
     /**
      * Converts {@code this} string to a {@linkplain DateExpression date}.
      *
+     * <p>This method behaves like {@link #parseDate(StringExpression)},
+     * with the default format, which is {@code "%Y-%m-%dT%H:%M:%S.%LZ"}.
+     *
      * <p>This will cause an error if this string does not represent a valid
      * date string (such as "2018-03-20", "2018-03-20T12:00:00Z", or
      * "2018-03-20T12:00:00+0500").
      *
+     * @see DateExpression#asString()
+     * @see DateExpression#asString(StringExpression, StringExpression)
      * @return the resulting value.
      */
     DateExpression parseDate();
@@ -147,6 +153,8 @@ public interface StringExpression extends Expression {
      * Converts {@code this} string to a {@linkplain DateExpression date},
      * using the specified {@code format}.
      *
+     * @see DateExpression#asString()
+     * @see DateExpression#asString(StringExpression, StringExpression)
      * @mongodb.server.release 4.0
      * @mongodb.driver.manual reference/operator/aggregation/dateToString/#std-label-format-specifiers Format Specifiers
      * @param format the format.
@@ -158,6 +166,8 @@ public interface StringExpression extends Expression {
      * Converts {@code this} string to a {@linkplain DateExpression date},
      * using the specified {@code timezone} and {@code format}.
      *
+     * @see DateExpression#asString()
+     * @see DateExpression#asString(StringExpression, StringExpression)
      * @mongodb.driver.manual reference/operator/aggregation/dateToString/#std-label-format-specifiers Format Specifiers
      * @param format the format.
      * @param timezone the UTC Offset or Olson Timezone Identifier.

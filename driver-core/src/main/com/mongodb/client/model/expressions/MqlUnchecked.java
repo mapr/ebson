@@ -42,7 +42,8 @@ public @interface MqlUnchecked {
      */
     enum Unchecked {
         /**
-         * The API relies on the values it encounters being of the type
+         * The API relies on the values it encounters being of the
+         * (raw or non-parameterized) type
          * implied, specified by, or inferred from the user code.
          *
          * <p>For example, {@link DocumentExpression#getBoolean(String)}
@@ -59,8 +60,6 @@ public @interface MqlUnchecked {
          * {@linkplain ArrayExpression array} raw type,
          * but relies on the elements of the array being of
          * the type derived from the user code.
-         *
-         * <p>One may think of it as a more specific version of {@link #TYPE}.</p>
          */
         TYPE_ARGUMENT,
         /**

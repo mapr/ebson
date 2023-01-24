@@ -174,7 +174,7 @@ public final class Expressions {
     /**
      * Returns an {@linkplain ArrayExpression array} of
      * {@linkplain NumberExpression numbers} corresponding to
-     * the provided {@link Decimal128 Decimal128s}.
+     * the provided {@link Decimal128}s.
      *
      * @param array the array.
      * @return the resulting value.
@@ -204,7 +204,7 @@ public final class Expressions {
     /**
      * Returns an {@linkplain ArrayExpression array} of
      * {@linkplain DateExpression dates} corresponding to
-     * the provided {@link Instant Instants}.
+     * the provided {@link Instant}s.
      *
      * @param array the array.
      * @return the resulting value.
@@ -234,7 +234,7 @@ public final class Expressions {
     /**
      * Returns an {@linkplain ArrayExpression array} of
      * {@linkplain StringExpression strings} corresponding to
-     * the provided {@link String Strings}.
+     * the provided {@link String}s.
      *
      * @param array the array.
      * @return the resulting value.
